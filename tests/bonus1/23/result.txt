@@ -1,0 +1,5 @@
+result (DID) = {
+D1
+D2
+D1
+}
