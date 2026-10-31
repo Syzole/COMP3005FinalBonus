@@ -16,7 +16,7 @@ from engine.tree import (
 from engine.expr import parse_condition
 
 
-def roundtrip(node):
+def roundtrip(node): # go from node to json and back to node to check if they are the same
     back = from_json(to_json(node))
     assert back == node, f"\n  orig={node!r}\n  back={back!r}"
 

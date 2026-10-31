@@ -30,7 +30,7 @@ _JSON_TO_BIN = {
 }
 
 
-def _cond_to_json(node) -> dict:
+def _cond_to_json(node) -> dict: # go from condition node to json
     if isinstance(node, Compare):
         return {
             "op": "compare",
@@ -47,7 +47,7 @@ def _cond_to_json(node) -> dict:
     raise TypeError(f"not a condition node: {type(node)}")
 
 
-def _operand_to_json(node) -> dict:
+def _operand_to_json(node) -> dict: # go from operand node to json
     if isinstance(node, Attr):
         d = {"op": "attr", "name": node.name}
         if node.relation is not None:
@@ -60,7 +60,7 @@ def _operand_to_json(node) -> dict:
     raise TypeError(f"not an operand: {type(node)}")
 
 
-def _cond_from_json(d):
+def _cond_from_json(d): # go from json to condition node
     if isinstance(d, str):
         return parse_condition(d)
     op = d["op"]
@@ -75,7 +75,7 @@ def _cond_from_json(d):
     raise ValueError(f"unknown condition op: {op}")
 
 
-def _operand_from_json(d):
+def _operand_from_json(d): # go from json to operand node
     op = d["op"]
     if op == "attr":
         return Attr(name=d["name"], relation=d.get("relation"))
@@ -86,7 +86,7 @@ def _operand_from_json(d):
     raise ValueError(f"unknown operand op: {op}")
 
 
-def to_json(node) -> dict:
+def to_json(node) -> dict: # go from node to json
     """Convert an AST node to a JSON-serializable dict (logical plan)."""
     if isinstance(node, Relation):
         return {"op": "scan", "table": node.name}
@@ -121,7 +121,7 @@ def to_json(node) -> dict:
 
 
 
-def from_json(d) -> object:
+def from_json(d) -> object: # go from json to node
     """Convert a JSON dict (or JSON string) back to an AST node."""
     if isinstance(d, str):
         d = json.loads(d)
@@ -154,9 +154,9 @@ def from_json(d) -> object:
 
 
 
-def dumps(node, **kwargs) -> str:
+def dumps(node, **kwargs) -> str: # go from node to json string
     return json.dumps(to_json(node), **kwargs)
 
 
-def loads(text: str):
+def loads(text: str): # go from json string to node
     return from_json(json.loads(text))
