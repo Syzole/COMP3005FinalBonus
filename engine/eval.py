@@ -1,9 +1,18 @@
-from engine.table import Table
+from __future__ import annotations
+
+from engine.table import Table, Catalog, RelationSource, iter_tuples, materialize
 from engine.tree import *
 
 """
-Evaluate an RA AST against a catalog.
-Catalog is any mapping name -> relation source (objects with .attributes and .rows).
+Evaluate an RA AST against a catalog you pass in.
+
+Catalog may be:
+  - a Catalog instance
+  - a Mapping[str, RelationSource]
+  - a callable(name) -> RelationSource
+
+Operators pull tuples via RelationSource / iter_tuples; they do not open files
+or depend on a global in-memory store.
 """
 
 join_comparisons = 0
@@ -21,10 +30,7 @@ class EvalError(Exception):
 
 
 def as_set(table: Table) -> set[tuple]:
-    result = set()
-    for row in table.rows:
-        result.add(tuple(row))
-    return result
+    return {tuple(row) for row in iter_tuples(table)}
 
 
 def from_set(attrs: list[str], rows: set[tuple]) -> Table:
@@ -39,7 +45,9 @@ def relation_label(node) -> str | None:
     return None
 
 
-def qualify(table: Table, name: str | None) -> Table:
+def qualify(table: RelationSource, name: str | None) -> Table:
+    """Prefix (or re-prefix) columns as name.column."""
+    table = materialize(table)
     if name is None:
         return table
     attrs = [f"{name}.{a.split('.')[-1]}" for a in table.attributes]
@@ -60,42 +68,93 @@ def check_duplicate_attributes(attrs: list[str]):
         seen.add(attr)
 
 
-def _as_table(source) -> Table:
-    """Accept Table or any object with attributes + rows."""
-    if isinstance(source, Table):
+def resolve_attr(key: str, attrs: list[str]) -> int:
+    """
+    Resolve a column reference against a schema.
+
+    Supports table.column everywhere:
+      - exact match on attrs
+      - qualified key R.col against bare col (or unique *.col)
+      - bare key col against unique R.col
+    """
+    exact = [i for i, a in enumerate(attrs) if a == key]
+    if len(exact) == 1:
+        return exact[0]
+    if len(exact) > 1:
+        raise EvalError(f"schema, ambiguous attribute {key}")
+
+    if "." in key:
+        _rel, col = key.rsplit(".", 1)
+        # Bare column in schema
+        bare = [i for i, a in enumerate(attrs) if a == col]
+        if len(bare) == 1:
+            return bare[0]
+        if len(bare) > 1:
+            raise EvalError(f"schema, ambiguous attribute {key}")
+        # Unique suffix match (any qualification)
+        suffix = [i for i, a in enumerate(attrs) if a.split(".")[-1] == col]
+        if len(suffix) == 1:
+            return suffix[0]
+        if len(suffix) > 1:
+            raise EvalError(f"schema, ambiguous attribute {key}")
+        raise EvalError(f"name, unknown attribute {key}")
+
+    # Bare key: unique attr whose column part equals key
+    suffix = [i for i, a in enumerate(attrs) if a.split(".")[-1] == key]
+    if len(suffix) == 1:
+        return suffix[0]
+    if len(suffix) > 1:
+        raise EvalError(f"schema, ambiguous attribute {key}")
+    raise EvalError(f"name, unknown attribute {key}")
+
+
+def _open(catalog, name: str) -> RelationSource:
+    """Pull a relation source from whatever catalog the caller passed in."""
+    if isinstance(catalog, Catalog):
+        source = catalog.get(name)
+        if source is None:
+            raise EvalError(f"name, unknown relation {name}")
         return source
-    return Table(attributes=list(source.attributes), rows=[list(r) for r in source.rows])
 
-
-def _lookup(catalog, name: str) -> Table:
-    if callable(catalog):
+    if callable(catalog) and not isinstance(catalog, dict):
         try:
             source = catalog(name)
+        except EvalError:
+            raise
         except Exception as e:
             raise EvalError(f"name, unknown relation {name}") from e
         if source is None:
             raise EvalError(f"name, unknown relation {name}")
-        return _as_table(source)
-    if name not in catalog:
-        raise EvalError(f"name, unknown relation {name}")
-    return _as_table(catalog[name])
+        return source
+
+    # Mapping-like (dict, etc.)
+    try:
+        if name not in catalog:
+            raise EvalError(f"name, unknown relation {name}")
+        return catalog[name]
+    except EvalError:
+        raise
+    except Exception as e:
+        raise EvalError(f"name, unknown relation {name}") from e
 
 
 def evaluate(node, catalog) -> Table:
-    """Recursively evaluate AST. catalog: Mapping[str, Table-like] or callable(name)->Table-like."""
+    """Recursively evaluate AST. catalog: Catalog | Mapping | callable(name)->source."""
     global select_comparisons
 
     if isinstance(node, Relation):
-        return _lookup(catalog, node.name)
+        # Catalog supplies the source; do not bake in a global table store.
+        # Join/rename qualify columns; resolve_attr accepts table.column everywhere.
+        return materialize(_open(catalog, node.name))
 
     if isinstance(node, Select):
         child = evaluate(node.input, catalog)
         kept = []
-        for row in child.rows:
+        for row in iter_tuples(child):
             select_comparisons += 1
             if matches(node.cond, child.attributes, row):
                 kept.append(row)
-        return Table(attributes=child.attributes, rows=kept)
+        return Table(attributes=list(child.attributes), rows=kept)
 
     if isinstance(node, Project):
         seen = set()
@@ -105,33 +164,32 @@ def evaluate(node, catalog) -> Table:
             seen.add(attr)
 
         child = evaluate(node.input, catalog)
+        indexes = []
         for attr in node.attrs:
-            if attr not in child.attributes:
-                raise EvalError(f"name, unknown attribute {attr}")
-            if child.attributes.count(attr) > 1:
-                raise EvalError(f"schema, duplicate attribute {attr}")
+            indexes.append(resolve_attr(attr, child.attributes))
 
-        indexes = [child.attributes.index(a) for a in node.attrs]
         # Bag semantics: keep duplicate projected rows.
-        rows = [[row[i] for i in indexes] for row in child.rows]
+        rows = [[row[i] for i in indexes] for row in iter_tuples(child)]
+        # Output names as requested (may be bare or qualified).
         return Table(attributes=list(node.attrs), rows=rows)
 
     if isinstance(node, Distinct):
         child = evaluate(node.input, catalog)
         rows = []
         seen = set()
-        for row in child.rows:
+        for row in iter_tuples(child):
             key = tuple(row)
             if key in seen:
                 continue
             seen.add(key)
             rows.append(list(row))
-        return Table(attributes=child.attributes, rows=rows)
+        return Table(attributes=list(child.attributes), rows=rows)
 
     if isinstance(node, Binary):
         left = evaluate(node.left, catalog)
         right = evaluate(node.right, catalog)
         if node.op == "join":
+            # Re-qualify join sides from the plan labels (handles rename).
             left = qualify(left, relation_label(node.left))
             right = qualify(right, relation_label(node.right))
         return eval_binary(node.op, left, right, node.cond)
@@ -140,13 +198,16 @@ def evaluate(node, catalog) -> Table:
         child = evaluate(node.input, catalog)
         attrs = [f"{node.name}.{a.split('.')[-1]}" for a in child.attributes]
         check_duplicate_attributes(attrs)
-        return Table(attributes=attrs, rows=list(child.rows))
+        return Table(attributes=attrs, rows=[list(r) for r in iter_tuples(child)])
 
     raise ValueError(f"not implemented: {type(node)}")
 
 
 def eval_binary(op, left, right, cond):
     global join_comparisons
+    left = materialize(left)
+    right = materialize(right)
+
     if op in ("union", "intersect", "minus"):
         if left.attributes != right.attributes:
             raise EvalError("schema, not union compatible")
@@ -162,7 +223,7 @@ def eval_binary(op, left, right, cond):
     if op == "times":
         attrs = left.attributes + right.attributes
         check_duplicate_attributes(attrs)
-        rows = [l + r for l in left.rows for r in right.rows]
+        rows = [l + r for l in iter_tuples(left) for r in iter_tuples(right)]
         return Table(attributes=attrs, rows=rows)
 
     if op == "join":
@@ -171,8 +232,8 @@ def eval_binary(op, left, right, cond):
         attrs = left.attributes + right.attributes
         check_duplicate_attributes(attrs)
         rows = []
-        for l in left.rows:
-            for r in right.rows:
+        for l in iter_tuples(left):
+            for r in iter_tuples(right):
                 join_comparisons += 1
                 row = l + r
                 if matches(cond, attrs, row):
@@ -206,12 +267,7 @@ def value_of(operand, attrs, row):
         return s
     if isinstance(operand, Attr):
         key = f"{operand.relation}.{operand.name}" if operand.relation else operand.name
-        count = attrs.count(key)
-        if count == 0:
-            raise EvalError(f"name, unknown attribute {key}")
-        if count > 1:
-            raise EvalError(f"schema, ambiguous attribute {key}")
-        return row[attrs.index(key)]
+        return row[resolve_attr(key, attrs)]
     raise ValueError(f"not implemented: {type(operand)}")
 
 
@@ -241,7 +297,7 @@ def compare(left, op, right):
 def format_result(table: Table) -> str:
     header = ", ".join(table.attributes)
     lines = [f"result ({header}) = {{"]
-    for row in table.rows:
+    for row in iter_tuples(table):
         cells = ", ".join(str(v) for v in row)
         lines.append(f"    {cells}")
     lines.append("}")

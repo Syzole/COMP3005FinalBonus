@@ -5,7 +5,7 @@ from engine.tokeniser import tokenise, LexError
 from engine.parser import Parser, ParseError
 from engine.tree import format_tree
 from engine.eval import format_result, evaluate, EvalError
-from engine.table import load_relation
+from engine.table import load_relation, Catalog
 
 
 def main():
@@ -23,10 +23,10 @@ def main():
         tokens = tokenise(args.query)
         ast = Parser(tokens).parse()
     except LexError as e:
-        print(f"Lexical error: {e}")
+        print(f"error: lexical, {e}")
         return
     except ParseError as e:
-        print(f"Parse error: {e}")
+        print(f"error: syntax, {e}")
         return
 
     if args.tree:
@@ -38,7 +38,7 @@ def main():
         root = Path(__file__).resolve().parent.parent
         data_path = root / "tests" / "bonus1" / "data" / "Employees.txt"
 
-    catalog = load_relation(data_path.read_text(encoding="utf-8"))
+    catalog = Catalog(load_relation(data_path.read_text(encoding="utf-8")))
     try:
         result = evaluate(ast, catalog)
         print(format_result(result))

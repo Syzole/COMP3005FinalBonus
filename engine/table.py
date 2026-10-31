@@ -1,20 +1,78 @@
-from dataclasses import dataclass
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+from typing import Iterable, Iterator, Protocol, Sequence, runtime_checkable
+
 from engine.tokeniser import tokenise, TokenType
 
 """
-In-memory relation storage and data.txt loader.
+In-memory relation storage, tuple-source protocol, and data.txt loader.
+
+Operators consume RelationSource (attributes + iterable tuples), not a hard-wired
+global catalog or a required list type. Table is one concrete source.
 """
+
+
+@runtime_checkable
+class RelationSource(Protocol):
+    """Anything operators can pull tuples from (Module 2 will refine iterators)."""
+
+    @property
+    def attributes(self) -> list[str]: ...
+
+    def __iter__(self) -> Iterator[Sequence]: ...
+
 
 @dataclass
 class Table:
+    """Materialised bag of tuples. Implements RelationSource."""
+
     attributes: list[str]
-    rows: list[list]
+    rows: list[list] = field(default_factory=list)
+
+    def __iter__(self) -> Iterator[list]:
+        return iter(self.rows)
+
+
+def iter_tuples(source: RelationSource | Iterable) -> Iterator[list]:
+    """Yield row lists from a RelationSource or a bare iterable of rows."""
+    if isinstance(source, RelationSource) or hasattr(source, "attributes"):
+        rows = getattr(source, "rows", source)
+        for row in rows:
+            yield list(row)
+        return
+    for row in source:
+        yield list(row)
+
+
+def materialize(source: RelationSource) -> Table:
+    """Snapshot a source into a Table (needed when a child is scanned more than once)."""
+    if isinstance(source, Table):
+        return source
+    attrs = list(source.attributes)
+    return Table(attributes=attrs, rows=[list(r) for r in source])
+
+
+class Catalog:
+    """Name -> RelationSource. Passed into evaluate; operators never open files."""
+
+    def __init__(self, tables: dict[str, RelationSource] | None = None):
+        self._tables: dict[str, RelationSource] = dict(tables or {})
+
+    def get(self, name: str) -> RelationSource | None:
+        return self._tables.get(name)
+
+    def __contains__(self, name: str) -> bool:
+        return name in self._tables
+
+    def __getitem__(self, name: str) -> RelationSource:
+        return self._tables[name]
 
 
 def load_relation(text: str) -> dict[str, Table]:
     tokens = tokenise(text)
     i = 0
-    tables = {}
+    tables: dict[str, Table] = {}
 
     def peek():
         return tokens[i]
@@ -78,6 +136,6 @@ def load_relation(text: str) -> dict[str, Table]:
                 raise ValueError(f"schema, duplicate attribute {attr}")
             seen_attrs.add(attr)
 
-        # Keep bag semantics on load (no dedup).
+        # Bag semantics on load (no dedup).
         tables[name] = Table(attributes, rows)
     return tables
