@@ -1,20 +1,20 @@
-from tokeniser import Token, TokenType, tokenise
-from tree import *
+from engine.tokeniser import Token, TokenType, tokenise
+from engine.tree import *
 
 """
-Recursive-descent parser: tokens -> AST (tree.py nodes).
-Precedence (high to low for conditions): not > and > or.
-Binary RA ops (union/intersect/minus/times/join) are left-associative via expression().
+Recursive-descent parser: tokens -> AST.
+Precedence (conditions): not > and > or.
+Binary RA ops are left-associative via expression().
 """
 
 OPS = {
-        TokenType.EQUALS: "=",
-        TokenType.NOT_EQUALS: "!=",
-        TokenType.LESS_THAN: "<",
-        TokenType.LESS_THAN_OR_EQUALS: "<=",
-        TokenType.GREATER_THAN: ">",
-        TokenType.GREATER_THAN_OR_EQUALS: ">=",
-    }
+    TokenType.EQUALS: "=",
+    TokenType.NOT_EQUALS: "!=",
+    TokenType.LESS_THAN: "<",
+    TokenType.LESS_THAN_OR_EQUALS: "<=",
+    TokenType.GREATER_THAN: ">",
+    TokenType.GREATER_THAN_OR_EQUALS: ">=",
+}
 
 BINARY_OPS = {"union", "intersect", "minus", "times", "join"}
 
@@ -39,16 +39,15 @@ class Parser:
             left = Binary(op=op, left=left, right=right, cond=cond)
         return left
 
-
-    def peek(self) -> Token: #just like the peek function in the tokeniser
+    def peek(self) -> Token:
         return self.tokens[self.i]
 
-    def next(self) -> Token: #moves the index to the next token
+    def next(self) -> Token:
         token = self.peek()
         self.i += 1
         return token
 
-    def check(self, token_type: TokenType, value: str | None = None) -> bool: #checks if the current token is of the given type and value
+    def check(self, token_type: TokenType, value: str | None = None) -> bool:
         token = self.peek()
         if token.type != token_type:
             return False
@@ -56,38 +55,44 @@ class Parser:
             return False
         return True
 
-    def expect(self, token_type: TokenType, value: str | None = None) -> Token: #checks if the current token is of the given type and value, and if not, raises a ParseError
+    def expect(self, token_type: TokenType, value: str | None = None) -> Token:
         if not self.check(token_type, value):
             if token_type is TokenType.RPARENTHESIS:
                 raise ParseError("missing )")
             raise ParseError(f"Expected {token_type} but got {self.peek().type}")
         return self.next()
-    
-    def parse(self): #parses the tokens and returns the root node of the AST
+
+    def parse(self):
         node = self.expression()
         self.expect(TokenType.EOF)
         return node
 
-    #here is where we will define unary expressions
-    def project_expr(self):
-        self.next() #consume project
-        self.expect(TokenType.LBRACKET)
-
-        if self.check(TokenType.RBRACKET): #if they immediately close the bracket, its empty
-            raise ParseError("empty attribute list")
-
-        attributes = [self.expect(TokenType.IDENTIFIER).value]
-        while self.check(TokenType.COMMA): #while there are still commas that means we still got atts to look at
+    def _attr_name(self) -> str:
+        """Parse Name or Relation.Name into a single attribute string."""
+        name = self.expect(TokenType.IDENTIFIER).value
+        if self.check(TokenType.DOT):
             self.next()
-            attributes.append(self.expect(TokenType.IDENTIFIER).value)
-        self.expect(TokenType.RBRACKET) #close out the project
-        self.expect(TokenType.LPARENTHESIS)#state the relation
+            attr = self.expect(TokenType.IDENTIFIER).value
+            return f"{name}.{attr}"
+        return name
+
+    def project_expr(self):
+        self.next()
+        self.expect(TokenType.LBRACKET)
+        if self.check(TokenType.RBRACKET):
+            raise ParseError("empty attribute list")
+        attributes = [self._attr_name()]
+        while self.check(TokenType.COMMA):
+            self.next()
+            attributes.append(self._attr_name())
+        self.expect(TokenType.RBRACKET)
+        self.expect(TokenType.LPARENTHESIS)
         inside = self.expression()
         self.expect(TokenType.RPARENTHESIS)
         return Project(attrs=attributes, input=inside)
 
     def select_expr(self):
-        self.next() #consume the select token
+        self.next()
         self.expect(TokenType.LBRACKET)
         condition = self.condition()
         self.expect(TokenType.RBRACKET)
@@ -97,7 +102,7 @@ class Parser:
         return Select(cond=condition, input=inner)
 
     def rename_expr(self):
-        self.next() #consume rename
+        self.next()
         self.expect(TokenType.LBRACKET)
         name = self.expect(TokenType.IDENTIFIER).value
         self.expect(TokenType.RBRACKET)
@@ -106,7 +111,12 @@ class Parser:
         self.expect(TokenType.RPARENTHESIS)
         return Rename(name=name, input=inner)
 
-
+    def distinct_expr(self):
+        self.next()
+        self.expect(TokenType.LPARENTHESIS)
+        inner = self.expression()
+        self.expect(TokenType.RPARENTHESIS)
+        return Distinct(input=inner)
 
     def term(self):
         if self.check(TokenType.IDENTIFIER, "select"):
@@ -115,6 +125,8 @@ class Parser:
             return self.project_expr()
         if self.check(TokenType.IDENTIFIER, "rename"):
             return self.rename_expr()
+        if self.check(TokenType.IDENTIFIER, "distinct"):
+            return self.distinct_expr()
         if self.check(TokenType.LPARENTHESIS):
             self.next()
             node = self.expression()
@@ -133,11 +145,10 @@ class Parser:
         right = self.operand()
         return Compare(op=op, left=left, right=right)
 
-
     def operand(self):
-        if self.check(TokenType.IDENTIFIER): #if an identifier is the next token, consume it and return the attribute
+        if self.check(TokenType.IDENTIFIER):
             name = self.next().value
-            if self.check(TokenType.DOT): #if a dot is the next token, consume it and return the attribute
+            if self.check(TokenType.DOT):
                 self.next()
                 attr = self.expect(TokenType.IDENTIFIER).value
                 return Attr(name=attr, relation=name)
@@ -168,19 +179,12 @@ class Parser:
         return left
 
     def not_condition(self):
-        if self.check(TokenType.IDENTIFIER, "not"): #if not is the next token, consume it and return the not condition
+        if self.check(TokenType.IDENTIFIER, "not"):
             self.next()
             return Not(cond=self.not_condition())
-        if self.check(TokenType.LPARENTHESIS): #if a parenthesis is the next token, consume it and return the condition
+        if self.check(TokenType.LPARENTHESIS):
             self.next()
             node = self.condition()
             self.expect(TokenType.RPARENTHESIS)
             return node
         return self.comparison()
-
-
-if __name__ == "__main__":
-    print(Parser(tokenise("select[Age>=30](Employees)")).parse())
-    # print(Parser(tokenise("project[Name](select[Age>30](Employees))")).parse())
-    q = "A times B"
-    print((Parser(tokenise(q)).parse()))

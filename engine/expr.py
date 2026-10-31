@@ -1,4 +1,4 @@
-"""Standalone condition parse + evaluate (used by M2, M3, M4)."""
+"""Standalone condition parse + evaluate."""
 
 from engine.tokeniser import tokenise, TokenType
 from engine.parser import Parser, ParseError

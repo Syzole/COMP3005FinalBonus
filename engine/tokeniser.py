@@ -162,32 +162,3 @@ def tokenise(source: str) -> list[Token]:
     
     tokens.append(Token(TokenType.EOF, None, line, column))
     return tokens
-
-
-def dump_tokens(tokens: list[Token]) -> None:
-    for t in tokens:
-        pos = f"{t.line}:{t.column}"
-        kind = t.type.name
-        value = "" if t.value is None else repr(t.value)
-        print(f"  {pos:<7} {kind:<24} {value}")
-
-
-
-
-#this is me running some small tests on the tokeniser, making sure it splits as expected
-if __name__ == "__main__":
-    from pathlib import Path
-
-    tests = Path(__file__).resolve().parent.parent / "tests"
-    first, last = 26,26 # change this range as you go
-
-    for n in range(first, last + 1):
-        query = (tests / str(n) / "query.txt").read_text(encoding="utf-8")
-        print(f"=== test {n} ===")
-        print(f"query: {query.rstrip()}")
-        try:
-            dump_tokens(tokenise(query))
-        except LexError as e:
-            print(f"  ERROR: {e}")
-        print()
-        
