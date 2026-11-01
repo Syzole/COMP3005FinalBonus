@@ -165,3 +165,44 @@ class SlottedPage:
             lines.append(f"  {i}:({off},{length})")
         return lines
 
+# --- Directory page helpers (heap free-space directory) ---
+
+DIR_HEADER = 10  # page_id u32 + next u32 + entry_count u16
+DIR_ENTRY = 6    # data_page_id u32 + free_bytes u16
+DIR_CAPACITY = (PAGE_SIZE - DIR_HEADER) // DIR_ENTRY  # 681
+NO_NEXT = 0xFFFFFFFF
+
+
+def init_directory_page(data: bytearray, page_id: int) -> None:
+    struct.pack_into("<IIH", data, 0, page_id, NO_NEXT, 0)
+    # remainder already zero
+
+
+def dir_get_next(data: bytes) -> int:
+    return struct.unpack_from("<I", data, 4)[0]
+
+
+def dir_set_next(data: bytearray, next_id: int) -> None:
+    struct.pack_into("<I", data, 4, next_id)
+
+
+def dir_entry_count(data: bytes) -> int:
+    return struct.unpack_from("<H", data, 8)[0]
+
+
+def dir_set_entry_count(data: bytearray, count: int) -> None:
+    struct.pack_into("<H", data, 8, count)
+
+
+def dir_get_entry(data: bytes, i: int) -> tuple[int, int]:
+    off = DIR_HEADER + DIR_ENTRY * i
+    return struct.unpack_from("<IH", data, off)
+
+
+def dir_set_entry(data: bytearray, i: int, data_page_id: int, free_bytes: int) -> None:
+    off = DIR_HEADER + DIR_ENTRY * i
+    struct.pack_into("<IH", data, off, data_page_id, free_bytes)
+
+
+def init_data_page(data: bytearray, page_id: int) -> None:
+    SlottedPage.fresh(data, page_id)
