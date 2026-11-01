@@ -7,3 +7,6 @@ I had started a rough draft of how I want to transfer stuff over for the final b
 
 # Oct 31
 Spent the whole day working on a rough model for M1, will most likley need to redo alot of it if it does not pass tests
+
+# Nov 1st
+I had spent alot of the time finishging up m1 since i foudn that it very hard to split up the remaining modules so I had done alot research and stayed up very late working on it
