@@ -1,0 +1,485 @@
+{
+  "capacity": [
+    {
+      "schema": "all_int",
+      "L": 12,
+      "computed": 255,
+      "measured": 255,
+      "record_bytes": 12
+    },
+    {
+      "schema": "short_varchar",
+      "L": 13,
+      "computed": 240,
+      "measured": 240,
+      "record_bytes": 13
+    },
+    {
+      "schema": "long_varchar",
+      "L": 106,
+      "computed": 37,
+      "measured": 37,
+      "record_bytes": 106
+    }
+  ],
+  "policies": [
+    {
+      "trace": "trace0_example.txt",
+      "policy": "lru",
+      "B": 4,
+      "hit_rate": 0.3333,
+      "hits": 2,
+      "misses": 4,
+      "evictions": 0
+    },
+    {
+      "trace": "trace0_example.txt",
+      "policy": "lru",
+      "B": 16,
+      "hit_rate": 0.3333,
+      "hits": 2,
+      "misses": 4,
+      "evictions": 0
+    },
+    {
+      "trace": "trace0_example.txt",
+      "policy": "lru",
+      "B": 64,
+      "hit_rate": 0.3333,
+      "hits": 2,
+      "misses": 4,
+      "evictions": 0
+    },
+    {
+      "trace": "trace0_example.txt",
+      "policy": "lru",
+      "B": 256,
+      "hit_rate": 0.3333,
+      "hits": 2,
+      "misses": 4,
+      "evictions": 0
+    },
+    {
+      "trace": "trace0_example.txt",
+      "policy": "clock",
+      "B": 4,
+      "hit_rate": 0.3333,
+      "hits": 2,
+      "misses": 4,
+      "evictions": 0
+    },
+    {
+      "trace": "trace0_example.txt",
+      "policy": "clock",
+      "B": 16,
+      "hit_rate": 0.3333,
+      "hits": 2,
+      "misses": 4,
+      "evictions": 0
+    },
+    {
+      "trace": "trace0_example.txt",
+      "policy": "clock",
+      "B": 64,
+      "hit_rate": 0.3333,
+      "hits": 2,
+      "misses": 4,
+      "evictions": 0
+    },
+    {
+      "trace": "trace0_example.txt",
+      "policy": "clock",
+      "B": 256,
+      "hit_rate": 0.3333,
+      "hits": 2,
+      "misses": 4,
+      "evictions": 0
+    },
+    {
+      "trace": "trace1_random.txt",
+      "policy": "lru",
+      "B": 4,
+      "hit_rate": 0.0,
+      "hits": 0,
+      "misses": 500,
+      "evictions": 496
+    },
+    {
+      "trace": "trace1_random.txt",
+      "policy": "lru",
+      "B": 16,
+      "hit_rate": 0.0,
+      "hits": 0,
+      "misses": 500,
+      "evictions": 484
+    },
+    {
+      "trace": "trace1_random.txt",
+      "policy": "lru",
+      "B": 64,
+      "hit_rate": 0.936,
+      "hits": 468,
+      "misses": 32,
+      "evictions": 0
+    },
+    {
+      "trace": "trace1_random.txt",
+      "policy": "lru",
+      "B": 256,
+      "hit_rate": 0.936,
+      "hits": 468,
+      "misses": 32,
+      "evictions": 0
+    },
+    {
+      "trace": "trace1_random.txt",
+      "policy": "clock",
+      "B": 4,
+      "hit_rate": 0.0,
+      "hits": 0,
+      "misses": 500,
+      "evictions": 496
+    },
+    {
+      "trace": "trace1_random.txt",
+      "policy": "clock",
+      "B": 16,
+      "hit_rate": 0.0,
+      "hits": 0,
+      "misses": 500,
+      "evictions": 484
+    },
+    {
+      "trace": "trace1_random.txt",
+      "policy": "clock",
+      "B": 64,
+      "hit_rate": 0.936,
+      "hits": 468,
+      "misses": 32,
+      "evictions": 0
+    },
+    {
+      "trace": "trace1_random.txt",
+      "policy": "clock",
+      "B": 256,
+      "hit_rate": 0.936,
+      "hits": 468,
+      "misses": 32,
+      "evictions": 0
+    },
+    {
+      "trace": "trace2_hot.txt",
+      "policy": "lru",
+      "B": 4,
+      "hit_rate": 0.0,
+      "hits": 0,
+      "misses": 320,
+      "evictions": 316
+    },
+    {
+      "trace": "trace2_hot.txt",
+      "policy": "lru",
+      "B": 16,
+      "hit_rate": 0.975,
+      "hits": 312,
+      "misses": 8,
+      "evictions": 0
+    },
+    {
+      "trace": "trace2_hot.txt",
+      "policy": "lru",
+      "B": 64,
+      "hit_rate": 0.975,
+      "hits": 312,
+      "misses": 8,
+      "evictions": 0
+    },
+    {
+      "trace": "trace2_hot.txt",
+      "policy": "lru",
+      "B": 256,
+      "hit_rate": 0.975,
+      "hits": 312,
+      "misses": 8,
+      "evictions": 0
+    },
+    {
+      "trace": "trace2_hot.txt",
+      "policy": "clock",
+      "B": 4,
+      "hit_rate": 0.0,
+      "hits": 0,
+      "misses": 320,
+      "evictions": 316
+    },
+    {
+      "trace": "trace2_hot.txt",
+      "policy": "clock",
+      "B": 16,
+      "hit_rate": 0.975,
+      "hits": 312,
+      "misses": 8,
+      "evictions": 0
+    },
+    {
+      "trace": "trace2_hot.txt",
+      "policy": "clock",
+      "B": 64,
+      "hit_rate": 0.975,
+      "hits": 312,
+      "misses": 8,
+      "evictions": 0
+    },
+    {
+      "trace": "trace2_hot.txt",
+      "policy": "clock",
+      "B": 256,
+      "hit_rate": 0.975,
+      "hits": 312,
+      "misses": 8,
+      "evictions": 0
+    },
+    {
+      "trace": "trace3_seq80x10.txt",
+      "policy": "lru",
+      "B": 4,
+      "hit_rate": 0.0,
+      "hits": 0,
+      "misses": 800,
+      "evictions": 796
+    },
+    {
+      "trace": "trace3_seq80x10.txt",
+      "policy": "lru",
+      "B": 16,
+      "hit_rate": 0.0,
+      "hits": 0,
+      "misses": 800,
+      "evictions": 784
+    },
+    {
+      "trace": "trace3_seq80x10.txt",
+      "policy": "lru",
+      "B": 64,
+      "hit_rate": 0.0,
+      "hits": 0,
+      "misses": 800,
+      "evictions": 736
+    },
+    {
+      "trace": "trace3_seq80x10.txt",
+      "policy": "lru",
+      "B": 256,
+      "hit_rate": 0.9,
+      "hits": 720,
+      "misses": 80,
+      "evictions": 0
+    },
+    {
+      "trace": "trace3_seq80x10.txt",
+      "policy": "clock",
+      "B": 4,
+      "hit_rate": 0.0,
+      "hits": 0,
+      "misses": 800,
+      "evictions": 796
+    },
+    {
+      "trace": "trace3_seq80x10.txt",
+      "policy": "clock",
+      "B": 16,
+      "hit_rate": 0.0,
+      "hits": 0,
+      "misses": 800,
+      "evictions": 784
+    },
+    {
+      "trace": "trace3_seq80x10.txt",
+      "policy": "clock",
+      "B": 64,
+      "hit_rate": 0.0,
+      "hits": 0,
+      "misses": 800,
+      "evictions": 736
+    },
+    {
+      "trace": "trace3_seq80x10.txt",
+      "policy": "clock",
+      "B": 256,
+      "hit_rate": 0.9,
+      "hits": 720,
+      "misses": 80,
+      "evictions": 0
+    },
+    {
+      "trace": "trace4_loop16.txt",
+      "policy": "lru",
+      "B": 4,
+      "hit_rate": 0.0,
+      "hits": 0,
+      "misses": 480,
+      "evictions": 476
+    },
+    {
+      "trace": "trace4_loop16.txt",
+      "policy": "lru",
+      "B": 16,
+      "hit_rate": 0.9667,
+      "hits": 464,
+      "misses": 16,
+      "evictions": 0
+    },
+    {
+      "trace": "trace4_loop16.txt",
+      "policy": "lru",
+      "B": 64,
+      "hit_rate": 0.9667,
+      "hits": 464,
+      "misses": 16,
+      "evictions": 0
+    },
+    {
+      "trace": "trace4_loop16.txt",
+      "policy": "lru",
+      "B": 256,
+      "hit_rate": 0.9667,
+      "hits": 464,
+      "misses": 16,
+      "evictions": 0
+    },
+    {
+      "trace": "trace4_loop16.txt",
+      "policy": "clock",
+      "B": 4,
+      "hit_rate": 0.0,
+      "hits": 0,
+      "misses": 480,
+      "evictions": 476
+    },
+    {
+      "trace": "trace4_loop16.txt",
+      "policy": "clock",
+      "B": 16,
+      "hit_rate": 0.9667,
+      "hits": 464,
+      "misses": 16,
+      "evictions": 0
+    },
+    {
+      "trace": "trace4_loop16.txt",
+      "policy": "clock",
+      "B": 64,
+      "hit_rate": 0.9667,
+      "hits": 464,
+      "misses": 16,
+      "evictions": 0
+    },
+    {
+      "trace": "trace4_loop16.txt",
+      "policy": "clock",
+      "B": 256,
+      "hit_rate": 0.9667,
+      "hits": 464,
+      "misses": 16,
+      "evictions": 0
+    },
+    {
+      "trace": "trace5_stride.txt",
+      "policy": "lru",
+      "B": 4,
+      "hit_rate": 0.0,
+      "hits": 0,
+      "misses": 400,
+      "evictions": 396
+    },
+    {
+      "trace": "trace5_stride.txt",
+      "policy": "lru",
+      "B": 16,
+      "hit_rate": 0.0,
+      "hits": 0,
+      "misses": 400,
+      "evictions": 384
+    },
+    {
+      "trace": "trace5_stride.txt",
+      "policy": "lru",
+      "B": 64,
+      "hit_rate": 0.84,
+      "hits": 336,
+      "misses": 64,
+      "evictions": 0
+    },
+    {
+      "trace": "trace5_stride.txt",
+      "policy": "lru",
+      "B": 256,
+      "hit_rate": 0.84,
+      "hits": 336,
+      "misses": 64,
+      "evictions": 0
+    },
+    {
+      "trace": "trace5_stride.txt",
+      "policy": "clock",
+      "B": 4,
+      "hit_rate": 0.0,
+      "hits": 0,
+      "misses": 400,
+      "evictions": 396
+    },
+    {
+      "trace": "trace5_stride.txt",
+      "policy": "clock",
+      "B": 16,
+      "hit_rate": 0.0,
+      "hits": 0,
+      "misses": 400,
+      "evictions": 384
+    },
+    {
+      "trace": "trace5_stride.txt",
+      "policy": "clock",
+      "B": 64,
+      "hit_rate": 0.84,
+      "hits": 336,
+      "misses": 64,
+      "evictions": 0
+    },
+    {
+      "trace": "trace5_stride.txt",
+      "policy": "clock",
+      "B": 256,
+      "hit_rate": 0.84,
+      "hits": 336,
+      "misses": 64,
+      "evictions": 0
+    }
+  ],
+  "scan": [
+    {
+      "B": 2,
+      "tuples": 254990,
+      "file_pages": 501,
+      "data_pages_approx": 500,
+      "reads": 501,
+      "writes": 0
+    },
+    {
+      "B": 8,
+      "tuples": 254990,
+      "file_pages": 501,
+      "data_pages_approx": 500,
+      "reads": 501,
+      "writes": 0
+    },
+    {
+      "B": 64,
+      "tuples": 254990,
+      "file_pages": 501,
+      "data_pages_approx": 500,
+      "reads": 501,
+      "writes": 0
+    }
+  ]
+}

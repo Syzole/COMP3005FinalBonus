@@ -15,6 +15,8 @@ from storage.page import (
     SlottedPage, dir_entry_count, dir_get_entry, dir_get_next, NO_NEXT,
 )
 
+#this whole file is a wrapper around the different commands on the storage system
+#becuase of this it can be quite verbose and long
 
 def cmd_create_table(args):
     schema = parse_schema(args.schema)
@@ -161,20 +163,20 @@ def build_parser():
     sub = p.add_subparsers(dest="cmd", required=True)
 
     c = sub.add_parser("create-table")
-    c.add_argument("--db", required=True)
+    c.add_argument("--db", default="data")
     c.add_argument("--name", required=True)
     c.add_argument("--schema", required=True)
     c.set_defaults(func=cmd_create_table)
 
     c = sub.add_parser("load")
-    c.add_argument("--db", required=True)
+    c.add_argument("--db", default="data")
     c.add_argument("--table", required=True)
     c.add_argument("--file", required=True)
     c.add_argument("--frames", type=int, default=32)
     c.set_defaults(func=cmd_load)
 
     c = sub.add_parser("scan")
-    c.add_argument("--db", required=True)
+    c.add_argument("--db", default="data")
     c.add_argument("--table", required=True)
     c.add_argument("--frames", type=int, default=8)
     c.add_argument("--limit", type=int, default=None)
@@ -182,13 +184,13 @@ def build_parser():
     c.set_defaults(func=cmd_scan)
 
     c = sub.add_parser("layout")
-    c.add_argument("--db", required=True)
+    c.add_argument("--db", default="data")
     c.add_argument("--table", required=True)
     c.add_argument("--page", type=int, required=True)
     c.set_defaults(func=cmd_layout)
 
     c = sub.add_parser("trace")
-    c.add_argument("--db", required=True)
+    c.add_argument("--db", default="data")
     c.add_argument("--file", required=True)
     c.add_argument("--frames", type=int, required=True)
     c.add_argument("--policy", choices=["lru", "clock", "LRU", "CLOCK"], required=True)
