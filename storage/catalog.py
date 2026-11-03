@@ -29,9 +29,10 @@ from pathlib import Path
 from storage.disk import DiskManager
 from storage.buffer import BufferPool
 from storage.heap import HeapFile, HeapError
+
+
 class CatalogError(Exception):
     pass
-
 
 
 def _pack_table(
@@ -42,6 +43,7 @@ def _pack_table(
     num_tuples: int,
     stats: bytes = b"",
 ) -> bytes:
+    # manual binary packing to create a single record
     parts = [struct.pack("<H", len(name.encode("utf-8"))), name.encode("utf-8")]
     parts.append(struct.pack("<H", len(schema)))
     for col in schema:
@@ -64,6 +66,7 @@ def _pack_table(
 
 
 def _unpack_table(data: bytes) -> dict:
+    # inverse of _pack_table — walk the same offsets
     off = 0
     (nlen,) = struct.unpack_from("<H", data, off)
     off += 2
@@ -103,15 +106,14 @@ def _unpack_table(data: bytes) -> dict:
     }
 
 
-# Internal schema for catalog heap: one opaque VARCHAR-like blob field.
-# We store the packed bytes as a single raw record without going through
-# encode_tuple — HeapFile.insert expects schema values. Use a bypass.
+# catalog rows aren't normal tuples — we stash the packed blob as-is.
+# HeapFile.insert wants schema values, so this subclass inserts raw bytes instead.
 
 
 class _RawHeap(HeapFile):
-    """Heap that stores raw byte records (catalog metadata)."""
+    """Same insert/scan idea as HeapFile, but records are opaque bytes."""
 
-    def insert_raw(self, record: bytes) -> tuple[int, int]:
+    def insert_raw(self, record: bytes) -> tuple[int, int]: #insert raw bytes into the catalog
         from storage.page import (
             SlottedPage, NO_SPACE, init_directory_page, init_data_page,
             dir_get_next, dir_set_next, dir_entry_count, dir_set_entry_count,
@@ -153,7 +155,7 @@ class _RawHeap(HeapFile):
             self.pool.unpin_page(dir_id, True)
             return self._insert_raw_into(data_pid, dir_id, count, record)
 
-    def _insert_raw_into(self, data_pid, dir_id, entry_idx, record):
+    def _insert_raw_into(self, data_pid, dir_id, entry_idx, record): # insert into a data page and update the directory
         from storage.page import SlottedPage, NO_SPACE, dir_set_entry
         page = self.pool.fetch_page(data_pid)
         sp = SlottedPage(page.data, page_id=data_pid)
@@ -168,7 +170,7 @@ class _RawHeap(HeapFile):
         self.pool.unpin_page(dir_id, True)
         return (data_pid, slot)
 
-    def scan_raw(self):
+    def scan_raw(self): # scan the catalog and return the raw bytes
         from storage.page import SlottedPage, dir_get_next, dir_entry_count, dir_get_entry, NO_NEXT
         dir_id = 0
         while True:
@@ -189,12 +191,13 @@ class _RawHeap(HeapFile):
             dir_id = next_id
 
 
-def SpFree(data, page_id):
+def SpFree(data, page_id): # get the free space of a slotted page
     from storage.page import SlottedPage
     return SlottedPage(data, page_id=page_id).free_space()
 
 
 class Catalog:
+    # db_dir holds catalog.db plus one {table}.db per table
     def __init__(self, db_dir: str | Path, frames: int = 16, policy: str = "lru"):
         self.db_dir = Path(db_dir)
         self.db_dir.mkdir(parents=True, exist_ok=True)
@@ -210,12 +213,13 @@ class Catalog:
         table_path = self.db_dir / file_name
         if table_path.exists():
             table_path.unlink()
-        # Touch empty heap file with directory page via a short-lived pool.
+        # spin up a tiny pool just long enough to create page 0 on the new file
         tdisk = DiskManager(table_path)
         tpool = BufferPool(4, "lru", tdisk)
         HeapFile(tpool, schema, table_name=name)
         tpool.flush_all()
 
+        # then remember the table in catalog.db
         rec = _pack_table(name, schema, file_name, num_pages=1, num_tuples=0, stats=b"")
         self._heap.insert_raw(rec)
         self.pool.flush_all()
@@ -234,7 +238,7 @@ class Catalog:
         return names
 
     def update_table_stats(self, name: str, num_pages: int, num_tuples: int, stats: bytes = b"") -> None:
-        """Replace the catalog record for `name` (delete + reinsert)."""
+        # no in-place update — delete the old catalog row and write a new one
         found = None
         for rid, raw in self._heap.scan_raw():
             info = _unpack_table(raw)
@@ -253,6 +257,7 @@ class Catalog:
         self.pool.flush_all()
 
     def open_heap(self, name: str, frames: int | None = None, policy: str = "lru") -> tuple[HeapFile, BufferPool, dict]:
+        # look up metadata, then open that table's own disk + pool
         info = self.get_table(name)
         if info is None:
             raise CatalogError(f"unknown table {name!r}")

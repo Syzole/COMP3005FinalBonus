@@ -12,11 +12,13 @@ class DiskError(Exception):
 
 
 class DiskManager:
+    # thin wrapper over a flat file — page_id i lives at offset i * 4096
     def __init__(self, path: str | Path):
         self.path = Path(path)
         self.path.parent.mkdir(parents=True, exist_ok=True)
         if not self.path.exists():
             self.path.write_bytes(b"")
+        # buffer pool stats pull these
         self.reads = 0
         self.writes = 0
 
@@ -24,6 +26,7 @@ class DiskManager:
         return self.path.stat().st_size // PAGE_SIZE
 
     def allocate_page(self) -> int:
+        # append a blank page, return its id
         page_id = self.num_pages()
         with self.path.open("ab") as f:
             f.write(bytes(PAGE_SIZE))

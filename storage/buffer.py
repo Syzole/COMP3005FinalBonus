@@ -14,11 +14,11 @@ class Frame:
     __slots__ = ("page_id", "data", "pin_count", "dirty", "ref")
 
     def __init__(self):
-        self.page_id: int | None = None
+        self.page_id: int | None = None  # None = this frame is empty
         self.data: bytearray = bytearray(PAGE_SIZE)
-        self.pin_count: int = 0
-        self.dirty: bool = False
-        self.ref: int = 0  # CLOCK reference bit
+        self.pin_count: int = 0  # >0 means someone is still using it — don't evict
+        self.dirty: bool = False  # True => must write back before reuse
+        self.ref: int = 0  # CLOCK only — "recently used" bit
 
 
 class BufferPool:
@@ -32,9 +32,9 @@ class BufferPool:
         self.policy = policy
         self.disk = disk
         self.frames = [Frame() for _ in range(frames)]
-        self.page_table: dict[int, int] = {}  # page_id -> frame index
-        self._lru: list[int] = []  # frame indices, MRU at end
-        self._hand = 0
+        self.page_table: dict[int, int] = {}  # page_id -> which frame it's in
+        self._lru: list[int] = []  # frame idxs; front = cold, end = hot
+        self._hand = 0  # CLOCK clock hand
         self.hits = 0
         self.misses = 0
         self.evictions = 0
@@ -49,6 +49,7 @@ class BufferPool:
         }
 
     def _on_access(self, frame_idx: int) -> None:
+        # bump "recently used" depending on policy
         if self.policy == "lru":
             if frame_idx in self._lru:
                 self._lru.remove(frame_idx)
@@ -58,16 +59,17 @@ class BufferPool:
 
     def _choose_victim(self) -> int | None:
         if self.policy == "lru":
+            # walk cold -> hot, first unpinned frame gets chosen
             for idx in self._lru:
                 if self.frames[idx].pin_count == 0:
                     return idx
-            # also consider empty frames not yet in LRU
+            # empty frames might not be in _lru yet
             for i, f in enumerate(self.frames):
                 if f.page_id is None and f.pin_count == 0:
                     return i
             return None
 
-        # CLOCK
+        # CLOCK: start with ref=1,give second chances by clearing ref, then take first with ref=0
         swept = 0
         while swept <= 2 * self.B:
             f = self.frames[self._hand]
@@ -85,7 +87,7 @@ class BufferPool:
         return None
 
     def _find_free_or_victim(self) -> tuple[int, bool]:
-        """Return (frame_idx, replaced) where replaced means a resident page was evicted."""
+        """(frame_idx, replaced) — replaced means we kicked something out."""
         for i, f in enumerate(self.frames):
             if f.page_id is None and f.pin_count == 0:
                 return i, False
@@ -108,6 +110,7 @@ class BufferPool:
                 self.evictions += 1
 
     def fetch_page(self, page_id: int) -> SlottedPage:
+        # hit: already in a frame — just pin + mark accessed
         if page_id in self.page_table:
             idx = self.page_table[page_id]
             f = self.frames[idx]
@@ -116,6 +119,7 @@ class BufferPool:
             self.hits += 1
             return SlottedPage(f.data, page_id=page_id)
 
+        # miss: free a frame (maybe write dirty), then read from disk
         idx, replaced = self._find_free_or_victim()
         self._evict_if_needed(idx, replaced)
 
@@ -129,20 +133,23 @@ class BufferPool:
         self.misses += 1
         self._on_access(idx)
         if self.policy == "clock":
-            # Newly loaded page gets ref=1; hand already advanced past victim in choose.
+            # loaded pages start with a free pass
             f.ref = 1
         return SlottedPage(f.data, page_id=page_id)
 
     def unpin_page(self, page_id: int, is_dirty: bool) -> None:
+        # ALWAYS unpin when done or the pool fills up with pinned frames
         if page_id not in self.page_table:
             raise BufferError(f"page {page_id} not resident")
         f = self.frames[self.page_table[page_id]]
         if f.pin_count == 0:
             raise BufferError(f"unpinning page {page_id} at pin count 0")
+        # once dirty, stays dirty until flush/evict
         f.dirty = f.dirty or is_dirty
         f.pin_count -= 1
 
     def new_page(self) -> SlottedPage:
+        # allocate on disk first, then park it in a frame (starts dirty)
         page_id = self.disk.allocate_page()
         idx, replaced = self._find_free_or_victim()
         self._evict_if_needed(idx, replaced)
@@ -158,8 +165,8 @@ class BufferPool:
             f.ref = 1
         return SlottedPage.fresh(f.data, page_id)
 
-
     def flush_all(self) -> None:
+        # push every dirty frame to disk (doesn't unpin anything)
         for f in self.frames:
             if f.page_id is not None and f.dirty:
                 self.disk.write_page(f.page_id, f.data)

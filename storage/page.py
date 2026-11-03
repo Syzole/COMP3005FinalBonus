@@ -1,10 +1,13 @@
-"""Slotted page layout and record encoding (M1 spec §§2–3)."""
+"""Slotted page layout and record encoding (M1 spec 2–3)."""
 
 from __future__ import annotations
 
 import struct
 from storage.disk import PAGE_SIZE
 
+# page layout:
+#   [header 8B][slot0][slot1]... growing right ---->  <---- records growing left [free_end]
+# free space is the gap in the middle
 HEADER_SIZE = 8  # page_id u32 + slot_count u16 + free_end u16
 SLOT_SIZE = 4    # offset u16 + length u16
 NO_SPACE = -1
@@ -15,18 +18,19 @@ class PageError(Exception):
 
 
 def encode_int(value: int) -> bytes:
-    return struct.pack("<i", value) #<i is a little endian integer
+    return struct.pack("<i", value)  # <i = little-endian int
 
 
 def decode_int(data: bytes, offset: int = 0) -> tuple[int, int]:
-    return struct.unpack_from("<i", data, offset)[0], offset + 4 
+    return struct.unpack_from("<i", data, offset)[0], offset + 4
 
 
 def encode_varchar(value: str, max_len: int) -> bytes:
     raw = value.encode("utf-8")
     if len(raw) > max_len:
         raise PageError(f"VARCHAR value length {len(raw)} exceeds max {max_len}")
-    return struct.pack("<H", len(raw)) + raw #<H is a little endian unsigned short 16 bit
+    # length prefix then the utf-8 bytes (max_len is on the bytes, not chars)
+    return struct.pack("<H", len(raw)) + raw  # <H = little-endian u16
 
 
 def decode_varchar(data: bytes, offset: int = 0) -> tuple[str, int]:
@@ -36,8 +40,9 @@ def decode_varchar(data: bytes, offset: int = 0) -> tuple[str, int]:
     return raw.decode("utf-8"), offset + length
 
 
-def encode_tuple(schema: list, values: list) -> bytes: # go from schema and values to bytes
+def encode_tuple(schema: list, values: list) -> bytes:
     """schema entries: (name, 'INT') or (name, 'VARCHAR', n)."""
+    # just concat each column's encoding — no separators, so decode needs the schema
     if len(schema) != len(values):
         raise PageError(f"tuple arity {len(values)} != schema arity {len(schema)}")
     parts = []
@@ -52,7 +57,7 @@ def encode_tuple(schema: list, values: list) -> bytes: # go from schema and valu
     return b"".join(parts)
 
 
-def decode_tuple(schema: list, data: bytes) -> list: # go from bytes to schema and values
+def decode_tuple(schema: list, data: bytes) -> list:
     values = []
     offset = 0
     for col in schema:
@@ -67,8 +72,9 @@ def decode_tuple(schema: list, data: bytes) -> list: # go from bytes to schema a
             raise PageError(f"unknown type {kind}")
     return values
 
+
 class SlottedPage:
-    """In-memory view of one 4096-byte page with the M1 slot directory."""
+    """One 4096-byte page. Either wrap existing bytes or start empty."""
 
     def __init__(self, data: bytearray | None = None, page_id: int = 0):
         if data is None:
@@ -80,12 +86,13 @@ class SlottedPage:
         else:
             if len(data) != PAGE_SIZE:
                 raise PageError(f"page must be {PAGE_SIZE} bytes")
+            # same buffer the frame holds — edits stick
             self.data = data if isinstance(data, bytearray) else bytearray(data)
             self._read_header()
 
     @classmethod
     def fresh(cls, data: bytearray, page_id: int) -> "SlottedPage":
-        """Initialize an existing buffer as an empty slotted page."""
+        # wipe a frame buffer and treat it as a brand-new empty page
         if len(data) != PAGE_SIZE:
             raise PageError(f"page must be {PAGE_SIZE} bytes")
         data[:] = bytes(PAGE_SIZE)
@@ -97,7 +104,6 @@ class SlottedPage:
         page._write_header()
         return page
 
-
     def _read_header(self) -> None:
         self.page_id, self.slot_count, self.free_end = struct.unpack_from("<IHH", self.data, 0)
 
@@ -105,6 +111,7 @@ class SlottedPage:
         struct.pack_into("<IHH", self.data, 0, self.page_id, self.slot_count, self.free_end)
 
     def free_space(self) -> int:
+        # gap between end of slot array and start of records
         return self.free_end - (HEADER_SIZE + SLOT_SIZE * self.slot_count)
 
     def _slot_offset(self, slot_no: int) -> int:
@@ -120,8 +127,10 @@ class SlottedPage:
 
     def insert(self, record: bytes) -> int:
         L = len(record)
+        # need room for the bytes AND a new slot entry
         if self.free_space() < L + SLOT_SIZE:
             return NO_SPACE
+        # shove record in from the right
         self.free_end = self.free_end - L
         start = self.free_end
         self.data[start:start + L] = record
@@ -141,8 +150,8 @@ class SlottedPage:
         offset, length = self.get_slot(slot_no)
         if offset == 0:
             raise PageError(f"slot {slot_no} already dead")
+        # just mark dead — we don't compact, so free_space() barely changes
         self.set_slot(slot_no, 0, 0)
-        # Space is NOT reclaimed (no compaction).
 
     def live_slots(self) -> list[int]:
         out = []
@@ -165,17 +174,19 @@ class SlottedPage:
             lines.append(f"  {i}:({off},{length})")
         return lines
 
-# --- Directory page helpers (heap free-space directory) ---
+
+# --- directory pages (used by the heap, not slotted data pages) ---
+# each entry: "data page X still has Y free bytes"
+# page 0 of a heap file is always a directory page
 
 DIR_HEADER = 10  # page_id u32 + next u32 + entry_count u16
 DIR_ENTRY = 6    # data_page_id u32 + free_bytes u16
 DIR_CAPACITY = (PAGE_SIZE - DIR_HEADER) // DIR_ENTRY  # 681
-NO_NEXT = 0xFFFFFFFF
+NO_NEXT = 0xFFFFFFFF  # sentinel — no linked directory page after this
 
 
 def init_directory_page(data: bytearray, page_id: int) -> None:
     struct.pack_into("<IIH", data, 0, page_id, NO_NEXT, 0)
-    # remainder already zero
 
 
 def dir_get_next(data: bytes) -> int:

@@ -73,6 +73,7 @@ def parse_csv_line(line: str) -> list[str]:
 
 
 def load_csv(catalog: Catalog, table: str, csv_path: str | Path, frames: int = 32, policy: str = "lru") -> int:
+    # open the table heap, push every CSV row in, then refresh catalog stats
     info = catalog.get_table(table)
     if info is None:
         raise CatalogError(f"unknown table {table!r}")

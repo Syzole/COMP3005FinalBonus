@@ -17,6 +17,7 @@ class HeapError(Exception):
 
 
 class HeapFile:
+    # one .db file: page 0 = directory, then a mix of more dir pages + slotted data pages
     def __init__(self, pool: BufferPool, schema: list, table_name: str = ""):
         self.pool = pool
         self.schema = schema
@@ -24,6 +25,7 @@ class HeapFile:
         self._ensure_directory()
 
     def _ensure_directory(self) -> None:
+        # brand-new file? make page 0 a directory
         if self.pool.disk.num_pages() == 0:
             page = self.pool.new_page()
             assert page.page_id == 0
@@ -36,8 +38,10 @@ class HeapFile:
             raise HeapError(
                 f"record longer than 4088 bytes in table {self.table_name!r}"
             )
+        # +4 for the slot entry we'll need on the data page
         need = len(record) + 4
 
+        # walk directory chain looking for a data page with enough free space
         dir_id = 0
         while True:
             dir_page = self.pool.fetch_page(dir_id)
@@ -55,7 +59,7 @@ class HeapFile:
                 dir_id = next_id
                 continue
 
-            # Need a new data page (and maybe a new directory page).
+            # nothing fit — grow. if this dir page is full, chain a new one first
             if count >= DIR_CAPACITY:
                 new_dir = self.pool.new_page()
                 init_directory_page(new_dir.data, new_dir.page_id)
@@ -66,6 +70,7 @@ class HeapFile:
                 dir_id = new_dir_id
                 continue
 
+            # allocate a fresh data page and register it in the directory
             data_page = self.pool.new_page()
             init_data_page(data_page.data, data_page.page_id)
             data_pid = data_page.page_id
@@ -83,15 +88,17 @@ class HeapFile:
         sp = SlottedPage(page.data, page_id=data_pid)
         slot = sp.insert(record)
         if slot == NO_SPACE:
+            # directory said there was room, shouldn't happen unless free_bytes is stale
             self.pool.unpin_page(data_pid, False)
             raise HeapError("directory free_bytes lied; no space on data page")
         free = sp.free_space()
         self.pool.unpin_page(data_pid, True)
 
+        # keep the directory's free_bytes honest
         dir_page = self.pool.fetch_page(dir_id)
         dir_set_entry(dir_page.data, entry_idx, data_pid, free)
         self.pool.unpin_page(dir_id, True)
-        return (data_pid, slot)
+        return (data_pid, slot)  # rid = (page, slot)
 
     def get(self, rid: tuple[int, int]) -> list:
         page_id, slot = rid
@@ -115,9 +122,11 @@ class HeapFile:
             raise HeapError(str(e)) from e
         free = sp.free_space()
         self.pool.unpin_page(page_id, True)
+        # note: delete doesn't really free much (no compaction), but we still refresh the dir
         self._update_free(page_id, free)
 
     def _update_free(self, data_pid: int, free_bytes: int) -> None:
+        # find this data page in the directory chain and update its free_bytes
         dir_id = 0
         while True:
             dir_page = self.pool.fetch_page(dir_id)
@@ -135,10 +144,11 @@ class HeapFile:
             dir_id = next_id
 
     def scan(self):
-        """Yield (rid, tuple). At most one data page + one directory page pinned."""
+        """Yield (rid, tuple). Keep at most one dir page + one data page pinned."""
         dir_id = 0
         while True:
             dir_page = self.pool.fetch_page(dir_id)
+            # snapshot entries then unpin so we don't hold the dir while scanning data
             count = dir_entry_count(dir_page.data)
             entries = [dir_get_entry(dir_page.data, i) for i in range(count)]
             next_id = dir_get_next(dir_page.data)
