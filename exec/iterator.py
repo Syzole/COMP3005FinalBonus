@@ -6,27 +6,27 @@ from abc import ABC, abstractmethod # abstract base class
 from typing import Any
 
 
-END = object()  # sentinel returned by next()
+END = object()  # sentinel returned by next(), meaning no more tuples
 
 
-class ExecError(Exception):
+class ExecError(Exception): # runtime / open-time execution error
     """Runtime / open-time execution error."""
 
 
-class Operator(ABC):
+class Operator(ABC): #base class for all physical operators
     """Every physical operator implements open / next / close / counters."""
 
     def __init__(self):
         self._opened = False
         self._closed = False
-        self.tuples_out = 0
+        self.tuples_out = 0 # spec counters for this and the 4 below
         self.comparisons = 0
         self.page_reads = 0
         self.page_writes = 0
-        self.schema: list = []  # [[qualified_name, type, ...], ...]
+        self.schema: list = []  # [[qualified_name, type, ...], ...], qualified cols like R.a
         self.attr_names: list[str] = []  # qualified names only
-        self.children: list[Operator] = []
-        self.frames_alloc: int = 1
+        self.children: list[Operator] = [] #child iterators
+        self.frames_alloc: int = 1 # num of frames we can allocate
         self.op_name: str = type(self).__name__
 
     @abstractmethod
@@ -50,11 +50,11 @@ class Operator(ABC):
             "page_writes": self.page_writes,
         }
 
-    def _emit(self, row: list) -> list:
+    def _emit(self, row: list) -> list: #bumps out a tuple when returning a row
         self.tuples_out += 1
         return row
 
-    def _check_schema_unique(self, attrs: list[str]) -> None:
+    def _check_schema_unique(self, attrs: list[str]) -> None: # check for dupe qualified names in schema
         seen = set()
         for a in attrs:
             if a in seen:
