@@ -15,3 +15,5 @@ I had spent alot of the time finishging up m1 since i foudn that it very hard to
 I spent the rest of the day prepping to finish M1 and doing the math by hand while making scripts to allow me to test the M1 code. I have completed M1 just need the traces from the prof. God help me this is so long.
 
 
+# Nov 3rd and 4th
+for these 2 days I was working on M2 however the AI kept messing up alot of the code and I had to spend alot of time fixing it, for example it would not account for spillage of operators and would not move data to the disk, and then in addition it would not move it back to memory when it was needed for sorting or a similar operation.
