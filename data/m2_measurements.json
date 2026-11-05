@@ -1,0 +1,3487 @@
+{
+  "width": 200,
+  "tuples_per_page": 19,
+  "record_bytes": 206,
+  "cost": "page reads + page writes",
+  "sort_formula": "section 2.5 carry-forward; final pass does not write; sort(M)+sort(N)+M+N",
+  "hash_formula": "reads 2(M+N), writes M+N, total 3(M+N)",
+  "nlj_formula": "reads M + ceil(M/(B-2))*N, writes 0",
+  "joins": [
+    {
+      "op": "nested_loop_join",
+      "kind": "uniform",
+      "pages": 8,
+      "B": 4,
+      "M": 8,
+      "N": 8,
+      "formula_reads": 40,
+      "formula_writes": 0,
+      "measured_reads": 40,
+      "measured_writes": 0,
+      "comparisons": 23104,
+      "tuples_out": 152,
+      "peak": 4,
+      "seconds": 0.047,
+      "tree": {
+        "op": "nested_loop_join",
+        "reads": 0,
+        "writes": 0,
+        "tuples_out": 152,
+        "comparisons": 23104,
+        "children": [
+          {
+            "op": "seqscan R",
+            "reads": 8,
+            "writes": 0,
+            "tuples_out": 152,
+            "comparisons": 0,
+            "children": []
+          },
+          {
+            "op": "seqscan S",
+            "reads": 32,
+            "writes": 0,
+            "tuples_out": 608,
+            "comparisons": 0,
+            "children": []
+          }
+        ]
+      }
+    },
+    {
+      "op": "sort_merge_join",
+      "kind": "uniform",
+      "pages": 8,
+      "B": 4,
+      "M": 8,
+      "N": 8,
+      "formula_reads": 48,
+      "formula_writes": 16,
+      "measured_reads": 48,
+      "measured_writes": 32,
+      "comparisons": 907,
+      "tuples_out": 152,
+      "peak": 4,
+      "seconds": 0.175,
+      "tree": {
+        "op": "sort_merge_join",
+        "reads": 32,
+        "writes": 32,
+        "tuples_out": 152,
+        "comparisons": 907,
+        "children": [
+          {
+            "op": "seqscan R",
+            "reads": 8,
+            "writes": 0,
+            "tuples_out": 152,
+            "comparisons": 0,
+            "children": []
+          },
+          {
+            "op": "seqscan S",
+            "reads": 8,
+            "writes": 0,
+            "tuples_out": 152,
+            "comparisons": 0,
+            "children": []
+          }
+        ]
+      }
+    },
+    {
+      "op": "hash_join",
+      "kind": "uniform",
+      "pages": 8,
+      "B": 4,
+      "M": 8,
+      "N": 8,
+      "formula_reads": 32,
+      "formula_writes": 16,
+      "measured_reads": 34,
+      "measured_writes": 18,
+      "comparisons": 152,
+      "tuples_out": 152,
+      "peak": 4,
+      "seconds": 0.086,
+      "tree": {
+        "op": "hash_join",
+        "reads": 18,
+        "writes": 18,
+        "tuples_out": 152,
+        "comparisons": 152,
+        "partitions": {
+          "build_pages": [
+            3,
+            3,
+            3
+          ],
+          "probe_pages": [
+            3,
+            3,
+            3
+          ]
+        },
+        "overflow": [],
+        "children": [
+          {
+            "op": "seqscan R",
+            "reads": 8,
+            "writes": 0,
+            "tuples_out": 152,
+            "comparisons": 0,
+            "children": []
+          },
+          {
+            "op": "seqscan S",
+            "reads": 8,
+            "writes": 0,
+            "tuples_out": 152,
+            "comparisons": 0,
+            "children": []
+          }
+        ]
+      }
+    },
+    {
+      "op": "nested_loop_join",
+      "kind": "uniform",
+      "pages": 8,
+      "B": 16,
+      "M": 8,
+      "N": 8,
+      "formula_reads": 16,
+      "formula_writes": 0,
+      "measured_reads": 16,
+      "measured_writes": 0,
+      "comparisons": 23104,
+      "tuples_out": 152,
+      "peak": 10,
+      "seconds": 0.036,
+      "tree": {
+        "op": "nested_loop_join",
+        "reads": 0,
+        "writes": 0,
+        "tuples_out": 152,
+        "comparisons": 23104,
+        "children": [
+          {
+            "op": "seqscan R",
+            "reads": 8,
+            "writes": 0,
+            "tuples_out": 152,
+            "comparisons": 0,
+            "children": []
+          },
+          {
+            "op": "seqscan S",
+            "reads": 8,
+            "writes": 0,
+            "tuples_out": 152,
+            "comparisons": 0,
+            "children": []
+          }
+        ]
+      }
+    },
+    {
+      "op": "sort_merge_join",
+      "kind": "uniform",
+      "pages": 8,
+      "B": 16,
+      "M": 8,
+      "N": 8,
+      "formula_reads": 32,
+      "formula_writes": 0,
+      "measured_reads": 32,
+      "measured_writes": 16,
+      "comparisons": 757,
+      "tuples_out": 152,
+      "peak": 9,
+      "seconds": 0.084,
+      "tree": {
+        "op": "sort_merge_join",
+        "reads": 16,
+        "writes": 16,
+        "tuples_out": 152,
+        "comparisons": 757,
+        "children": [
+          {
+            "op": "seqscan R",
+            "reads": 8,
+            "writes": 0,
+            "tuples_out": 152,
+            "comparisons": 0,
+            "children": []
+          },
+          {
+            "op": "seqscan S",
+            "reads": 8,
+            "writes": 0,
+            "tuples_out": 152,
+            "comparisons": 0,
+            "children": []
+          }
+        ]
+      }
+    },
+    {
+      "op": "hash_join",
+      "kind": "uniform",
+      "pages": 8,
+      "B": 16,
+      "M": 8,
+      "N": 8,
+      "formula_reads": 32,
+      "formula_writes": 16,
+      "measured_reads": 16,
+      "measured_writes": 0,
+      "comparisons": 152,
+      "tuples_out": 152,
+      "peak": 9,
+      "seconds": 0.006,
+      "tree": {
+        "op": "hash_join",
+        "reads": 0,
+        "writes": 0,
+        "tuples_out": 152,
+        "comparisons": 152,
+        "partitions": {
+          "build_pages": [
+            8
+          ],
+          "probe_pages": [
+            8
+          ],
+          "mode": "memory"
+        },
+        "overflow": [],
+        "children": [
+          {
+            "op": "seqscan R",
+            "reads": 8,
+            "writes": 0,
+            "tuples_out": 152,
+            "comparisons": 0,
+            "children": []
+          },
+          {
+            "op": "seqscan S",
+            "reads": 8,
+            "writes": 0,
+            "tuples_out": 152,
+            "comparisons": 0,
+            "children": []
+          }
+        ]
+      }
+    },
+    {
+      "op": "nested_loop_join",
+      "kind": "uniform",
+      "pages": 8,
+      "B": 64,
+      "M": 8,
+      "N": 8,
+      "formula_reads": 16,
+      "formula_writes": 0,
+      "measured_reads": 16,
+      "measured_writes": 0,
+      "comparisons": 23104,
+      "tuples_out": 152,
+      "peak": 10,
+      "seconds": 0.036,
+      "tree": {
+        "op": "nested_loop_join",
+        "reads": 0,
+        "writes": 0,
+        "tuples_out": 152,
+        "comparisons": 23104,
+        "children": [
+          {
+            "op": "seqscan R",
+            "reads": 8,
+            "writes": 0,
+            "tuples_out": 152,
+            "comparisons": 0,
+            "children": []
+          },
+          {
+            "op": "seqscan S",
+            "reads": 8,
+            "writes": 0,
+            "tuples_out": 152,
+            "comparisons": 0,
+            "children": []
+          }
+        ]
+      }
+    },
+    {
+      "op": "sort_merge_join",
+      "kind": "uniform",
+      "pages": 8,
+      "B": 64,
+      "M": 8,
+      "N": 8,
+      "formula_reads": 32,
+      "formula_writes": 0,
+      "measured_reads": 32,
+      "measured_writes": 16,
+      "comparisons": 757,
+      "tuples_out": 152,
+      "peak": 9,
+      "seconds": 0.088,
+      "tree": {
+        "op": "sort_merge_join",
+        "reads": 16,
+        "writes": 16,
+        "tuples_out": 152,
+        "comparisons": 757,
+        "children": [
+          {
+            "op": "seqscan R",
+            "reads": 8,
+            "writes": 0,
+            "tuples_out": 152,
+            "comparisons": 0,
+            "children": []
+          },
+          {
+            "op": "seqscan S",
+            "reads": 8,
+            "writes": 0,
+            "tuples_out": 152,
+            "comparisons": 0,
+            "children": []
+          }
+        ]
+      }
+    },
+    {
+      "op": "hash_join",
+      "kind": "uniform",
+      "pages": 8,
+      "B": 64,
+      "M": 8,
+      "N": 8,
+      "formula_reads": 32,
+      "formula_writes": 16,
+      "measured_reads": 16,
+      "measured_writes": 0,
+      "comparisons": 152,
+      "tuples_out": 152,
+      "peak": 9,
+      "seconds": 0.003,
+      "tree": {
+        "op": "hash_join",
+        "reads": 0,
+        "writes": 0,
+        "tuples_out": 152,
+        "comparisons": 152,
+        "partitions": {
+          "build_pages": [
+            8
+          ],
+          "probe_pages": [
+            8
+          ],
+          "mode": "memory"
+        },
+        "overflow": [],
+        "children": [
+          {
+            "op": "seqscan R",
+            "reads": 8,
+            "writes": 0,
+            "tuples_out": 152,
+            "comparisons": 0,
+            "children": []
+          },
+          {
+            "op": "seqscan S",
+            "reads": 8,
+            "writes": 0,
+            "tuples_out": 152,
+            "comparisons": 0,
+            "children": []
+          }
+        ]
+      }
+    },
+    {
+      "op": "nested_loop_join",
+      "kind": "uniform",
+      "pages": 8,
+      "B": 256,
+      "M": 8,
+      "N": 8,
+      "formula_reads": 16,
+      "formula_writes": 0,
+      "measured_reads": 16,
+      "measured_writes": 0,
+      "comparisons": 23104,
+      "tuples_out": 152,
+      "peak": 10,
+      "seconds": 0.034,
+      "tree": {
+        "op": "nested_loop_join",
+        "reads": 0,
+        "writes": 0,
+        "tuples_out": 152,
+        "comparisons": 23104,
+        "children": [
+          {
+            "op": "seqscan R",
+            "reads": 8,
+            "writes": 0,
+            "tuples_out": 152,
+            "comparisons": 0,
+            "children": []
+          },
+          {
+            "op": "seqscan S",
+            "reads": 8,
+            "writes": 0,
+            "tuples_out": 152,
+            "comparisons": 0,
+            "children": []
+          }
+        ]
+      }
+    },
+    {
+      "op": "sort_merge_join",
+      "kind": "uniform",
+      "pages": 8,
+      "B": 256,
+      "M": 8,
+      "N": 8,
+      "formula_reads": 32,
+      "formula_writes": 0,
+      "measured_reads": 32,
+      "measured_writes": 16,
+      "comparisons": 757,
+      "tuples_out": 152,
+      "peak": 9,
+      "seconds": 0.084,
+      "tree": {
+        "op": "sort_merge_join",
+        "reads": 16,
+        "writes": 16,
+        "tuples_out": 152,
+        "comparisons": 757,
+        "children": [
+          {
+            "op": "seqscan R",
+            "reads": 8,
+            "writes": 0,
+            "tuples_out": 152,
+            "comparisons": 0,
+            "children": []
+          },
+          {
+            "op": "seqscan S",
+            "reads": 8,
+            "writes": 0,
+            "tuples_out": 152,
+            "comparisons": 0,
+            "children": []
+          }
+        ]
+      }
+    },
+    {
+      "op": "hash_join",
+      "kind": "uniform",
+      "pages": 8,
+      "B": 256,
+      "M": 8,
+      "N": 8,
+      "formula_reads": 32,
+      "formula_writes": 16,
+      "measured_reads": 16,
+      "measured_writes": 0,
+      "comparisons": 152,
+      "tuples_out": 152,
+      "peak": 9,
+      "seconds": 0.004,
+      "tree": {
+        "op": "hash_join",
+        "reads": 0,
+        "writes": 0,
+        "tuples_out": 152,
+        "comparisons": 152,
+        "partitions": {
+          "build_pages": [
+            8
+          ],
+          "probe_pages": [
+            8
+          ],
+          "mode": "memory"
+        },
+        "overflow": [],
+        "children": [
+          {
+            "op": "seqscan R",
+            "reads": 8,
+            "writes": 0,
+            "tuples_out": 152,
+            "comparisons": 0,
+            "children": []
+          },
+          {
+            "op": "seqscan S",
+            "reads": 8,
+            "writes": 0,
+            "tuples_out": 152,
+            "comparisons": 0,
+            "children": []
+          }
+        ]
+      }
+    },
+    {
+      "op": "nested_loop_join",
+      "kind": "uniform",
+      "pages": 16,
+      "B": 4,
+      "M": 16,
+      "N": 16,
+      "formula_reads": 144,
+      "formula_writes": 0,
+      "measured_reads": 144,
+      "measured_writes": 0,
+      "comparisons": 92416,
+      "tuples_out": 304,
+      "peak": 4,
+      "seconds": 0.163,
+      "tree": {
+        "op": "nested_loop_join",
+        "reads": 0,
+        "writes": 0,
+        "tuples_out": 304,
+        "comparisons": 92416,
+        "children": [
+          {
+            "op": "seqscan R",
+            "reads": 16,
+            "writes": 0,
+            "tuples_out": 304,
+            "comparisons": 0,
+            "children": []
+          },
+          {
+            "op": "seqscan S",
+            "reads": 128,
+            "writes": 0,
+            "tuples_out": 2432,
+            "comparisons": 0,
+            "children": []
+          }
+        ]
+      }
+    },
+    {
+      "op": "sort_merge_join",
+      "kind": "uniform",
+      "pages": 16,
+      "B": 4,
+      "M": 16,
+      "N": 16,
+      "formula_reads": 120,
+      "formula_writes": 56,
+      "measured_reads": 120,
+      "measured_writes": 88,
+      "comparisons": 2423,
+      "tuples_out": 304,
+      "peak": 4,
+      "seconds": 0.456,
+      "tree": {
+        "op": "sort_merge_join",
+        "reads": 88,
+        "writes": 88,
+        "tuples_out": 304,
+        "comparisons": 2423,
+        "children": [
+          {
+            "op": "seqscan R",
+            "reads": 16,
+            "writes": 0,
+            "tuples_out": 304,
+            "comparisons": 0,
+            "children": []
+          },
+          {
+            "op": "seqscan S",
+            "reads": 16,
+            "writes": 0,
+            "tuples_out": 304,
+            "comparisons": 0,
+            "children": []
+          }
+        ]
+      }
+    },
+    {
+      "op": "hash_join",
+      "kind": "uniform",
+      "pages": 16,
+      "B": 4,
+      "M": 16,
+      "N": 16,
+      "formula_reads": 64,
+      "formula_writes": 32,
+      "measured_reads": 104,
+      "measured_writes": 72,
+      "comparisons": 304,
+      "tuples_out": 304,
+      "peak": 4,
+      "seconds": 0.286,
+      "tree": {
+        "op": "hash_join",
+        "reads": 72,
+        "writes": 72,
+        "tuples_out": 304,
+        "comparisons": 304,
+        "partitions": {
+          "build_pages": [
+            6,
+            6,
+            6
+          ],
+          "probe_pages": [
+            6,
+            6,
+            6
+          ]
+        },
+        "overflow": [
+          {
+            "depth": 0,
+            "build_pages": 6,
+            "probe_pages": 6,
+            "action": "repartition",
+            "child_build_pages": [
+              2,
+              2,
+              2
+            ]
+          },
+          {
+            "depth": 0,
+            "build_pages": 6,
+            "probe_pages": 6,
+            "action": "repartition",
+            "child_build_pages": [
+              2,
+              2,
+              2
+            ]
+          },
+          {
+            "depth": 0,
+            "build_pages": 6,
+            "probe_pages": 6,
+            "action": "repartition",
+            "child_build_pages": [
+              2,
+              2,
+              2
+            ]
+          }
+        ],
+        "children": [
+          {
+            "op": "seqscan R",
+            "reads": 16,
+            "writes": 0,
+            "tuples_out": 304,
+            "comparisons": 0,
+            "children": []
+          },
+          {
+            "op": "seqscan S",
+            "reads": 16,
+            "writes": 0,
+            "tuples_out": 304,
+            "comparisons": 0,
+            "children": []
+          }
+        ]
+      }
+    },
+    {
+      "op": "nested_loop_join",
+      "kind": "uniform",
+      "pages": 24,
+      "B": 4,
+      "M": 24,
+      "N": 24,
+      "formula_reads": 312,
+      "formula_writes": 0,
+      "measured_reads": 312,
+      "measured_writes": 0,
+      "comparisons": 207936,
+      "tuples_out": 456,
+      "peak": 4,
+      "seconds": 0.349,
+      "tree": {
+        "op": "nested_loop_join",
+        "reads": 0,
+        "writes": 0,
+        "tuples_out": 456,
+        "comparisons": 207936,
+        "children": [
+          {
+            "op": "seqscan R",
+            "reads": 24,
+            "writes": 0,
+            "tuples_out": 456,
+            "comparisons": 0,
+            "children": []
+          },
+          {
+            "op": "seqscan S",
+            "reads": 288,
+            "writes": 0,
+            "tuples_out": 5472,
+            "comparisons": 0,
+            "children": []
+          }
+        ]
+      }
+    },
+    {
+      "op": "sort_merge_join",
+      "kind": "uniform",
+      "pages": 24,
+      "B": 4,
+      "M": 24,
+      "N": 24,
+      "formula_reads": 192,
+      "formula_writes": 96,
+      "measured_reads": 192,
+      "measured_writes": 144,
+      "comparisons": 3635,
+      "tuples_out": 456,
+      "peak": 4,
+      "seconds": 0.741,
+      "tree": {
+        "op": "sort_merge_join",
+        "reads": 144,
+        "writes": 144,
+        "tuples_out": 456,
+        "comparisons": 3635,
+        "children": [
+          {
+            "op": "seqscan R",
+            "reads": 24,
+            "writes": 0,
+            "tuples_out": 456,
+            "comparisons": 0,
+            "children": []
+          },
+          {
+            "op": "seqscan S",
+            "reads": 24,
+            "writes": 0,
+            "tuples_out": 456,
+            "comparisons": 0,
+            "children": []
+          }
+        ]
+      }
+    },
+    {
+      "op": "hash_join",
+      "kind": "uniform",
+      "pages": 24,
+      "B": 4,
+      "M": 24,
+      "N": 24,
+      "formula_reads": 96,
+      "formula_writes": 48,
+      "measured_reads": 164,
+      "measured_writes": 116,
+      "comparisons": 456,
+      "tuples_out": 456,
+      "peak": 4,
+      "seconds": 0.586,
+      "tree": {
+        "op": "hash_join",
+        "reads": 116,
+        "writes": 116,
+        "tuples_out": 456,
+        "comparisons": 456,
+        "partitions": {
+          "build_pages": [
+            9,
+            8,
+            8
+          ],
+          "probe_pages": [
+            9,
+            8,
+            8
+          ]
+        },
+        "overflow": [
+          {
+            "depth": 0,
+            "build_pages": 9,
+            "probe_pages": 9,
+            "action": "repartition",
+            "child_build_pages": [
+              3,
+              4,
+              3
+            ]
+          },
+          {
+            "depth": 1,
+            "build_pages": 4,
+            "probe_pages": 4,
+            "action": "repartition",
+            "child_build_pages": [
+              2,
+              2,
+              1
+            ]
+          },
+          {
+            "depth": 0,
+            "build_pages": 8,
+            "probe_pages": 8,
+            "action": "repartition",
+            "child_build_pages": [
+              3,
+              3,
+              3
+            ]
+          },
+          {
+            "depth": 0,
+            "build_pages": 8,
+            "probe_pages": 8,
+            "action": "repartition",
+            "child_build_pages": [
+              3,
+              3,
+              3
+            ]
+          }
+        ],
+        "children": [
+          {
+            "op": "seqscan R",
+            "reads": 24,
+            "writes": 0,
+            "tuples_out": 456,
+            "comparisons": 0,
+            "children": []
+          },
+          {
+            "op": "seqscan S",
+            "reads": 24,
+            "writes": 0,
+            "tuples_out": 456,
+            "comparisons": 0,
+            "children": []
+          }
+        ]
+      }
+    },
+    {
+      "op": "nested_loop_join",
+      "kind": "uniform",
+      "pages": 24,
+      "B": 8,
+      "M": 24,
+      "N": 24,
+      "formula_reads": 120,
+      "formula_writes": 0,
+      "measured_reads": 120,
+      "measured_writes": 0,
+      "comparisons": 207936,
+      "tuples_out": 456,
+      "peak": 8,
+      "seconds": 0.299,
+      "tree": {
+        "op": "nested_loop_join",
+        "reads": 0,
+        "writes": 0,
+        "tuples_out": 456,
+        "comparisons": 207936,
+        "children": [
+          {
+            "op": "seqscan R",
+            "reads": 24,
+            "writes": 0,
+            "tuples_out": 456,
+            "comparisons": 0,
+            "children": []
+          },
+          {
+            "op": "seqscan S",
+            "reads": 96,
+            "writes": 0,
+            "tuples_out": 1824,
+            "comparisons": 0,
+            "children": []
+          }
+        ]
+      }
+    },
+    {
+      "op": "sort_merge_join",
+      "kind": "uniform",
+      "pages": 24,
+      "B": 8,
+      "M": 24,
+      "N": 24,
+      "formula_reads": 144,
+      "formula_writes": 48,
+      "measured_reads": 144,
+      "measured_writes": 96,
+      "comparisons": 3185,
+      "tuples_out": 456,
+      "peak": 8,
+      "seconds": 0.501,
+      "tree": {
+        "op": "sort_merge_join",
+        "reads": 96,
+        "writes": 96,
+        "tuples_out": 456,
+        "comparisons": 3185,
+        "children": [
+          {
+            "op": "seqscan R",
+            "reads": 24,
+            "writes": 0,
+            "tuples_out": 456,
+            "comparisons": 0,
+            "children": []
+          },
+          {
+            "op": "seqscan S",
+            "reads": 24,
+            "writes": 0,
+            "tuples_out": 456,
+            "comparisons": 0,
+            "children": []
+          }
+        ]
+      }
+    },
+    {
+      "op": "hash_join",
+      "kind": "uniform",
+      "pages": 24,
+      "B": 8,
+      "M": 24,
+      "N": 24,
+      "formula_reads": 96,
+      "formula_writes": 48,
+      "measured_reads": 104,
+      "measured_writes": 56,
+      "comparisons": 456,
+      "tuples_out": 456,
+      "peak": 8,
+      "seconds": 0.284,
+      "tree": {
+        "op": "hash_join",
+        "reads": 56,
+        "writes": 56,
+        "tuples_out": 456,
+        "comparisons": 456,
+        "partitions": {
+          "build_pages": [
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4
+          ],
+          "probe_pages": [
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4
+          ]
+        },
+        "overflow": [],
+        "children": [
+          {
+            "op": "seqscan R",
+            "reads": 24,
+            "writes": 0,
+            "tuples_out": 456,
+            "comparisons": 0,
+            "children": []
+          },
+          {
+            "op": "seqscan S",
+            "reads": 24,
+            "writes": 0,
+            "tuples_out": 456,
+            "comparisons": 0,
+            "children": []
+          }
+        ]
+      }
+    },
+    {
+      "op": "nested_loop_join",
+      "kind": "uniform",
+      "pages": 24,
+      "B": 16,
+      "M": 24,
+      "N": 24,
+      "formula_reads": 72,
+      "formula_writes": 0,
+      "measured_reads": 72,
+      "measured_writes": 0,
+      "comparisons": 207936,
+      "tuples_out": 456,
+      "peak": 16,
+      "seconds": 0.305,
+      "tree": {
+        "op": "nested_loop_join",
+        "reads": 0,
+        "writes": 0,
+        "tuples_out": 456,
+        "comparisons": 207936,
+        "children": [
+          {
+            "op": "seqscan R",
+            "reads": 24,
+            "writes": 0,
+            "tuples_out": 456,
+            "comparisons": 0,
+            "children": []
+          },
+          {
+            "op": "seqscan S",
+            "reads": 48,
+            "writes": 0,
+            "tuples_out": 912,
+            "comparisons": 0,
+            "children": []
+          }
+        ]
+      }
+    },
+    {
+      "op": "sort_merge_join",
+      "kind": "uniform",
+      "pages": 24,
+      "B": 16,
+      "M": 24,
+      "N": 24,
+      "formula_reads": 144,
+      "formula_writes": 48,
+      "measured_reads": 144,
+      "measured_writes": 96,
+      "comparisons": 2883,
+      "tuples_out": 456,
+      "peak": 16,
+      "seconds": 0.474,
+      "tree": {
+        "op": "sort_merge_join",
+        "reads": 96,
+        "writes": 96,
+        "tuples_out": 456,
+        "comparisons": 2883,
+        "children": [
+          {
+            "op": "seqscan R",
+            "reads": 24,
+            "writes": 0,
+            "tuples_out": 456,
+            "comparisons": 0,
+            "children": []
+          },
+          {
+            "op": "seqscan S",
+            "reads": 24,
+            "writes": 0,
+            "tuples_out": 456,
+            "comparisons": 0,
+            "children": []
+          }
+        ]
+      }
+    },
+    {
+      "op": "hash_join",
+      "kind": "uniform",
+      "pages": 24,
+      "B": 16,
+      "M": 24,
+      "N": 24,
+      "formula_reads": 96,
+      "formula_writes": 48,
+      "measured_reads": 108,
+      "measured_writes": 60,
+      "comparisons": 456,
+      "tuples_out": 456,
+      "peak": 16,
+      "seconds": 0.157,
+      "tree": {
+        "op": "hash_join",
+        "reads": 60,
+        "writes": 60,
+        "tuples_out": 456,
+        "comparisons": 456,
+        "partitions": {
+          "build_pages": [
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2
+          ],
+          "probe_pages": [
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2
+          ]
+        },
+        "overflow": [],
+        "children": [
+          {
+            "op": "seqscan R",
+            "reads": 24,
+            "writes": 0,
+            "tuples_out": 456,
+            "comparisons": 0,
+            "children": []
+          },
+          {
+            "op": "seqscan S",
+            "reads": 24,
+            "writes": 0,
+            "tuples_out": 456,
+            "comparisons": 0,
+            "children": []
+          }
+        ]
+      }
+    },
+    {
+      "op": "nested_loop_join",
+      "kind": "uniform",
+      "pages": 24,
+      "B": 32,
+      "M": 24,
+      "N": 24,
+      "formula_reads": 48,
+      "formula_writes": 0,
+      "measured_reads": 48,
+      "measured_writes": 0,
+      "comparisons": 207936,
+      "tuples_out": 456,
+      "peak": 26,
+      "seconds": 0.293,
+      "tree": {
+        "op": "nested_loop_join",
+        "reads": 0,
+        "writes": 0,
+        "tuples_out": 456,
+        "comparisons": 207936,
+        "children": [
+          {
+            "op": "seqscan R",
+            "reads": 24,
+            "writes": 0,
+            "tuples_out": 456,
+            "comparisons": 0,
+            "children": []
+          },
+          {
+            "op": "seqscan S",
+            "reads": 24,
+            "writes": 0,
+            "tuples_out": 456,
+            "comparisons": 0,
+            "children": []
+          }
+        ]
+      }
+    },
+    {
+      "op": "sort_merge_join",
+      "kind": "uniform",
+      "pages": 24,
+      "B": 32,
+      "M": 24,
+      "N": 24,
+      "formula_reads": 96,
+      "formula_writes": 0,
+      "measured_reads": 96,
+      "measured_writes": 48,
+      "comparisons": 2277,
+      "tuples_out": 456,
+      "peak": 25,
+      "seconds": 0.25,
+      "tree": {
+        "op": "sort_merge_join",
+        "reads": 48,
+        "writes": 48,
+        "tuples_out": 456,
+        "comparisons": 2277,
+        "children": [
+          {
+            "op": "seqscan R",
+            "reads": 24,
+            "writes": 0,
+            "tuples_out": 456,
+            "comparisons": 0,
+            "children": []
+          },
+          {
+            "op": "seqscan S",
+            "reads": 24,
+            "writes": 0,
+            "tuples_out": 456,
+            "comparisons": 0,
+            "children": []
+          }
+        ]
+      }
+    },
+    {
+      "op": "hash_join",
+      "kind": "uniform",
+      "pages": 24,
+      "B": 32,
+      "M": 24,
+      "N": 24,
+      "formula_reads": 96,
+      "formula_writes": 48,
+      "measured_reads": 48,
+      "measured_writes": 0,
+      "comparisons": 456,
+      "tuples_out": 456,
+      "peak": 25,
+      "seconds": 0.007,
+      "tree": {
+        "op": "hash_join",
+        "reads": 0,
+        "writes": 0,
+        "tuples_out": 456,
+        "comparisons": 456,
+        "partitions": {
+          "build_pages": [
+            24
+          ],
+          "probe_pages": [
+            24
+          ],
+          "mode": "memory"
+        },
+        "overflow": [],
+        "children": [
+          {
+            "op": "seqscan R",
+            "reads": 24,
+            "writes": 0,
+            "tuples_out": 456,
+            "comparisons": 0,
+            "children": []
+          },
+          {
+            "op": "seqscan S",
+            "reads": 24,
+            "writes": 0,
+            "tuples_out": 456,
+            "comparisons": 0,
+            "children": []
+          }
+        ]
+      }
+    },
+    {
+      "op": "nested_loop_join",
+      "kind": "uniform",
+      "pages": 24,
+      "B": 64,
+      "M": 24,
+      "N": 24,
+      "formula_reads": 48,
+      "formula_writes": 0,
+      "measured_reads": 48,
+      "measured_writes": 0,
+      "comparisons": 207936,
+      "tuples_out": 456,
+      "peak": 26,
+      "seconds": 0.288,
+      "tree": {
+        "op": "nested_loop_join",
+        "reads": 0,
+        "writes": 0,
+        "tuples_out": 456,
+        "comparisons": 207936,
+        "children": [
+          {
+            "op": "seqscan R",
+            "reads": 24,
+            "writes": 0,
+            "tuples_out": 456,
+            "comparisons": 0,
+            "children": []
+          },
+          {
+            "op": "seqscan S",
+            "reads": 24,
+            "writes": 0,
+            "tuples_out": 456,
+            "comparisons": 0,
+            "children": []
+          }
+        ]
+      }
+    },
+    {
+      "op": "sort_merge_join",
+      "kind": "uniform",
+      "pages": 24,
+      "B": 64,
+      "M": 24,
+      "N": 24,
+      "formula_reads": 96,
+      "formula_writes": 0,
+      "measured_reads": 96,
+      "measured_writes": 48,
+      "comparisons": 2277,
+      "tuples_out": 456,
+      "peak": 25,
+      "seconds": 0.251,
+      "tree": {
+        "op": "sort_merge_join",
+        "reads": 48,
+        "writes": 48,
+        "tuples_out": 456,
+        "comparisons": 2277,
+        "children": [
+          {
+            "op": "seqscan R",
+            "reads": 24,
+            "writes": 0,
+            "tuples_out": 456,
+            "comparisons": 0,
+            "children": []
+          },
+          {
+            "op": "seqscan S",
+            "reads": 24,
+            "writes": 0,
+            "tuples_out": 456,
+            "comparisons": 0,
+            "children": []
+          }
+        ]
+      }
+    },
+    {
+      "op": "hash_join",
+      "kind": "uniform",
+      "pages": 24,
+      "B": 64,
+      "M": 24,
+      "N": 24,
+      "formula_reads": 96,
+      "formula_writes": 48,
+      "measured_reads": 48,
+      "measured_writes": 0,
+      "comparisons": 456,
+      "tuples_out": 456,
+      "peak": 25,
+      "seconds": 0.008,
+      "tree": {
+        "op": "hash_join",
+        "reads": 0,
+        "writes": 0,
+        "tuples_out": 456,
+        "comparisons": 456,
+        "partitions": {
+          "build_pages": [
+            24
+          ],
+          "probe_pages": [
+            24
+          ],
+          "mode": "memory"
+        },
+        "overflow": [],
+        "children": [
+          {
+            "op": "seqscan R",
+            "reads": 24,
+            "writes": 0,
+            "tuples_out": 456,
+            "comparisons": 0,
+            "children": []
+          },
+          {
+            "op": "seqscan S",
+            "reads": 24,
+            "writes": 0,
+            "tuples_out": 456,
+            "comparisons": 0,
+            "children": []
+          }
+        ]
+      }
+    },
+    {
+      "op": "nested_loop_join",
+      "kind": "uniform",
+      "pages": 24,
+      "B": 128,
+      "M": 24,
+      "N": 24,
+      "formula_reads": 48,
+      "formula_writes": 0,
+      "measured_reads": 48,
+      "measured_writes": 0,
+      "comparisons": 207936,
+      "tuples_out": 456,
+      "peak": 26,
+      "seconds": 0.298,
+      "tree": {
+        "op": "nested_loop_join",
+        "reads": 0,
+        "writes": 0,
+        "tuples_out": 456,
+        "comparisons": 207936,
+        "children": [
+          {
+            "op": "seqscan R",
+            "reads": 24,
+            "writes": 0,
+            "tuples_out": 456,
+            "comparisons": 0,
+            "children": []
+          },
+          {
+            "op": "seqscan S",
+            "reads": 24,
+            "writes": 0,
+            "tuples_out": 456,
+            "comparisons": 0,
+            "children": []
+          }
+        ]
+      }
+    },
+    {
+      "op": "sort_merge_join",
+      "kind": "uniform",
+      "pages": 24,
+      "B": 128,
+      "M": 24,
+      "N": 24,
+      "formula_reads": 96,
+      "formula_writes": 0,
+      "measured_reads": 96,
+      "measured_writes": 48,
+      "comparisons": 2277,
+      "tuples_out": 456,
+      "peak": 25,
+      "seconds": 0.259,
+      "tree": {
+        "op": "sort_merge_join",
+        "reads": 48,
+        "writes": 48,
+        "tuples_out": 456,
+        "comparisons": 2277,
+        "children": [
+          {
+            "op": "seqscan R",
+            "reads": 24,
+            "writes": 0,
+            "tuples_out": 456,
+            "comparisons": 0,
+            "children": []
+          },
+          {
+            "op": "seqscan S",
+            "reads": 24,
+            "writes": 0,
+            "tuples_out": 456,
+            "comparisons": 0,
+            "children": []
+          }
+        ]
+      }
+    },
+    {
+      "op": "hash_join",
+      "kind": "uniform",
+      "pages": 24,
+      "B": 128,
+      "M": 24,
+      "N": 24,
+      "formula_reads": 96,
+      "formula_writes": 48,
+      "measured_reads": 48,
+      "measured_writes": 0,
+      "comparisons": 456,
+      "tuples_out": 456,
+      "peak": 25,
+      "seconds": 0.008,
+      "tree": {
+        "op": "hash_join",
+        "reads": 0,
+        "writes": 0,
+        "tuples_out": 456,
+        "comparisons": 456,
+        "partitions": {
+          "build_pages": [
+            24
+          ],
+          "probe_pages": [
+            24
+          ],
+          "mode": "memory"
+        },
+        "overflow": [],
+        "children": [
+          {
+            "op": "seqscan R",
+            "reads": 24,
+            "writes": 0,
+            "tuples_out": 456,
+            "comparisons": 0,
+            "children": []
+          },
+          {
+            "op": "seqscan S",
+            "reads": 24,
+            "writes": 0,
+            "tuples_out": 456,
+            "comparisons": 0,
+            "children": []
+          }
+        ]
+      }
+    },
+    {
+      "op": "nested_loop_join",
+      "kind": "uniform",
+      "pages": 24,
+      "B": 256,
+      "M": 24,
+      "N": 24,
+      "formula_reads": 48,
+      "formula_writes": 0,
+      "measured_reads": 48,
+      "measured_writes": 0,
+      "comparisons": 207936,
+      "tuples_out": 456,
+      "peak": 26,
+      "seconds": 0.291,
+      "tree": {
+        "op": "nested_loop_join",
+        "reads": 0,
+        "writes": 0,
+        "tuples_out": 456,
+        "comparisons": 207936,
+        "children": [
+          {
+            "op": "seqscan R",
+            "reads": 24,
+            "writes": 0,
+            "tuples_out": 456,
+            "comparisons": 0,
+            "children": []
+          },
+          {
+            "op": "seqscan S",
+            "reads": 24,
+            "writes": 0,
+            "tuples_out": 456,
+            "comparisons": 0,
+            "children": []
+          }
+        ]
+      }
+    },
+    {
+      "op": "sort_merge_join",
+      "kind": "uniform",
+      "pages": 24,
+      "B": 256,
+      "M": 24,
+      "N": 24,
+      "formula_reads": 96,
+      "formula_writes": 0,
+      "measured_reads": 96,
+      "measured_writes": 48,
+      "comparisons": 2277,
+      "tuples_out": 456,
+      "peak": 25,
+      "seconds": 0.248,
+      "tree": {
+        "op": "sort_merge_join",
+        "reads": 48,
+        "writes": 48,
+        "tuples_out": 456,
+        "comparisons": 2277,
+        "children": [
+          {
+            "op": "seqscan R",
+            "reads": 24,
+            "writes": 0,
+            "tuples_out": 456,
+            "comparisons": 0,
+            "children": []
+          },
+          {
+            "op": "seqscan S",
+            "reads": 24,
+            "writes": 0,
+            "tuples_out": 456,
+            "comparisons": 0,
+            "children": []
+          }
+        ]
+      }
+    },
+    {
+      "op": "hash_join",
+      "kind": "uniform",
+      "pages": 24,
+      "B": 256,
+      "M": 24,
+      "N": 24,
+      "formula_reads": 96,
+      "formula_writes": 48,
+      "measured_reads": 48,
+      "measured_writes": 0,
+      "comparisons": 456,
+      "tuples_out": 456,
+      "peak": 25,
+      "seconds": 0.007,
+      "tree": {
+        "op": "hash_join",
+        "reads": 0,
+        "writes": 0,
+        "tuples_out": 456,
+        "comparisons": 456,
+        "partitions": {
+          "build_pages": [
+            24
+          ],
+          "probe_pages": [
+            24
+          ],
+          "mode": "memory"
+        },
+        "overflow": [],
+        "children": [
+          {
+            "op": "seqscan R",
+            "reads": 24,
+            "writes": 0,
+            "tuples_out": 456,
+            "comparisons": 0,
+            "children": []
+          },
+          {
+            "op": "seqscan S",
+            "reads": 24,
+            "writes": 0,
+            "tuples_out": 456,
+            "comparisons": 0,
+            "children": []
+          }
+        ]
+      }
+    },
+    {
+      "op": "nested_loop_join",
+      "kind": "uniform",
+      "pages": 36,
+      "B": 4,
+      "M": 36,
+      "N": 36,
+      "formula_reads": 684,
+      "formula_writes": 0,
+      "measured_reads": 684,
+      "measured_writes": 0,
+      "comparisons": 467856,
+      "tuples_out": 684,
+      "peak": 4,
+      "seconds": 0.754,
+      "tree": {
+        "op": "nested_loop_join",
+        "reads": 0,
+        "writes": 0,
+        "tuples_out": 684,
+        "comparisons": 467856,
+        "children": [
+          {
+            "op": "seqscan R",
+            "reads": 36,
+            "writes": 0,
+            "tuples_out": 684,
+            "comparisons": 0,
+            "children": []
+          },
+          {
+            "op": "seqscan S",
+            "reads": 648,
+            "writes": 0,
+            "tuples_out": 12312,
+            "comparisons": 0,
+            "children": []
+          }
+        ]
+      }
+    },
+    {
+      "op": "sort_merge_join",
+      "kind": "uniform",
+      "pages": 36,
+      "B": 4,
+      "M": 36,
+      "N": 36,
+      "formula_reads": 288,
+      "formula_writes": 144,
+      "measured_reads": 288,
+      "measured_writes": 216,
+      "comparisons": 6137,
+      "tuples_out": 684,
+      "peak": 4,
+      "seconds": 1.091,
+      "tree": {
+        "op": "sort_merge_join",
+        "reads": 216,
+        "writes": 216,
+        "tuples_out": 684,
+        "comparisons": 6137,
+        "children": [
+          {
+            "op": "seqscan R",
+            "reads": 36,
+            "writes": 0,
+            "tuples_out": 684,
+            "comparisons": 0,
+            "children": []
+          },
+          {
+            "op": "seqscan S",
+            "reads": 36,
+            "writes": 0,
+            "tuples_out": 684,
+            "comparisons": 0,
+            "children": []
+          }
+        ]
+      }
+    },
+    {
+      "op": "hash_join",
+      "kind": "uniform",
+      "pages": 36,
+      "B": 4,
+      "M": 36,
+      "N": 36,
+      "formula_reads": 144,
+      "formula_writes": 72,
+      "measured_reads": 320,
+      "measured_writes": 248,
+      "comparisons": 684,
+      "tuples_out": 684,
+      "peak": 4,
+      "seconds": 1.058,
+      "tree": {
+        "op": "hash_join",
+        "reads": 248,
+        "writes": 248,
+        "tuples_out": 684,
+        "comparisons": 684,
+        "partitions": {
+          "build_pages": [
+            13,
+            12,
+            12
+          ],
+          "probe_pages": [
+            13,
+            12,
+            12
+          ]
+        },
+        "overflow": [
+          {
+            "depth": 0,
+            "build_pages": 13,
+            "probe_pages": 13,
+            "action": "repartition",
+            "child_build_pages": [
+              4,
+              5,
+              4
+            ]
+          },
+          {
+            "depth": 1,
+            "build_pages": 4,
+            "probe_pages": 4,
+            "action": "repartition",
+            "child_build_pages": [
+              2,
+              2,
+              1
+            ]
+          },
+          {
+            "depth": 1,
+            "build_pages": 5,
+            "probe_pages": 5,
+            "action": "repartition",
+            "child_build_pages": [
+              2,
+              2,
+              2
+            ]
+          },
+          {
+            "depth": 1,
+            "build_pages": 4,
+            "probe_pages": 4,
+            "action": "repartition",
+            "child_build_pages": [
+              1,
+              2,
+              2
+            ]
+          },
+          {
+            "depth": 0,
+            "build_pages": 12,
+            "probe_pages": 12,
+            "action": "repartition",
+            "child_build_pages": [
+              4,
+              4,
+              5
+            ]
+          },
+          {
+            "depth": 1,
+            "build_pages": 4,
+            "probe_pages": 4,
+            "action": "repartition",
+            "child_build_pages": [
+              2,
+              2,
+              2
+            ]
+          },
+          {
+            "depth": 1,
+            "build_pages": 4,
+            "probe_pages": 4,
+            "action": "repartition",
+            "child_build_pages": [
+              1,
+              1,
+              2
+            ]
+          },
+          {
+            "depth": 1,
+            "build_pages": 5,
+            "probe_pages": 5,
+            "action": "repartition",
+            "child_build_pages": [
+              1,
+              2,
+              2
+            ]
+          },
+          {
+            "depth": 0,
+            "build_pages": 12,
+            "probe_pages": 12,
+            "action": "repartition",
+            "child_build_pages": [
+              5,
+              4,
+              4
+            ]
+          },
+          {
+            "depth": 1,
+            "build_pages": 5,
+            "probe_pages": 5,
+            "action": "repartition",
+            "child_build_pages": [
+              2,
+              2,
+              2
+            ]
+          },
+          {
+            "depth": 1,
+            "build_pages": 4,
+            "probe_pages": 4,
+            "action": "repartition",
+            "child_build_pages": [
+              2,
+              1,
+              2
+            ]
+          },
+          {
+            "depth": 1,
+            "build_pages": 4,
+            "probe_pages": 4,
+            "action": "repartition",
+            "child_build_pages": [
+              2,
+              2,
+              2
+            ]
+          }
+        ],
+        "children": [
+          {
+            "op": "seqscan R",
+            "reads": 36,
+            "writes": 0,
+            "tuples_out": 684,
+            "comparisons": 0,
+            "children": []
+          },
+          {
+            "op": "seqscan S",
+            "reads": 36,
+            "writes": 0,
+            "tuples_out": 684,
+            "comparisons": 0,
+            "children": []
+          }
+        ]
+      }
+    },
+    {
+      "op": "nested_loop_join",
+      "kind": "uniform",
+      "pages": 48,
+      "B": 4,
+      "M": 48,
+      "N": 48,
+      "formula_reads": 1200,
+      "formula_writes": 0,
+      "measured_reads": 1200,
+      "measured_writes": 0,
+      "comparisons": 831744,
+      "tuples_out": 912,
+      "peak": 4,
+      "seconds": 1.306,
+      "tree": {
+        "op": "nested_loop_join",
+        "reads": 0,
+        "writes": 0,
+        "tuples_out": 912,
+        "comparisons": 831744,
+        "children": [
+          {
+            "op": "seqscan R",
+            "reads": 48,
+            "writes": 0,
+            "tuples_out": 912,
+            "comparisons": 0,
+            "children": []
+          },
+          {
+            "op": "seqscan S",
+            "reads": 1152,
+            "writes": 0,
+            "tuples_out": 21888,
+            "comparisons": 0,
+            "children": []
+          }
+        ]
+      }
+    },
+    {
+      "op": "sort_merge_join",
+      "kind": "uniform",
+      "pages": 48,
+      "B": 4,
+      "M": 48,
+      "N": 48,
+      "formula_reads": 456,
+      "formula_writes": 264,
+      "measured_reads": 456,
+      "measured_writes": 360,
+      "comparisons": 9095,
+      "tuples_out": 912,
+      "peak": 4,
+      "seconds": 1.816,
+      "tree": {
+        "op": "sort_merge_join",
+        "reads": 360,
+        "writes": 360,
+        "tuples_out": 912,
+        "comparisons": 9095,
+        "children": [
+          {
+            "op": "seqscan R",
+            "reads": 48,
+            "writes": 0,
+            "tuples_out": 912,
+            "comparisons": 0,
+            "children": []
+          },
+          {
+            "op": "seqscan S",
+            "reads": 48,
+            "writes": 0,
+            "tuples_out": 912,
+            "comparisons": 0,
+            "children": []
+          }
+        ]
+      }
+    },
+    {
+      "op": "hash_join",
+      "kind": "uniform",
+      "pages": 48,
+      "B": 4,
+      "M": 48,
+      "N": 48,
+      "formula_reads": 192,
+      "formula_writes": 96,
+      "measured_reads": 418,
+      "measured_writes": 322,
+      "comparisons": 912,
+      "tuples_out": 912,
+      "peak": 4,
+      "seconds": 1.395,
+      "tree": {
+        "op": "hash_join",
+        "reads": 322,
+        "writes": 322,
+        "tuples_out": 912,
+        "comparisons": 912,
+        "partitions": {
+          "build_pages": [
+            17,
+            17,
+            16
+          ],
+          "probe_pages": [
+            17,
+            17,
+            16
+          ]
+        },
+        "overflow": [
+          {
+            "depth": 0,
+            "build_pages": 17,
+            "probe_pages": 17,
+            "action": "repartition",
+            "child_build_pages": [
+              6,
+              7,
+              5
+            ]
+          },
+          {
+            "depth": 1,
+            "build_pages": 6,
+            "probe_pages": 6,
+            "action": "repartition",
+            "child_build_pages": [
+              2,
+              2,
+              2
+            ]
+          },
+          {
+            "depth": 1,
+            "build_pages": 7,
+            "probe_pages": 7,
+            "action": "repartition",
+            "child_build_pages": [
+              3,
+              2,
+              2
+            ]
+          },
+          {
+            "depth": 1,
+            "build_pages": 5,
+            "probe_pages": 5,
+            "action": "repartition",
+            "child_build_pages": [
+              2,
+              2,
+              2
+            ]
+          },
+          {
+            "depth": 0,
+            "build_pages": 17,
+            "probe_pages": 17,
+            "action": "repartition",
+            "child_build_pages": [
+              6,
+              5,
+              6
+            ]
+          },
+          {
+            "depth": 1,
+            "build_pages": 6,
+            "probe_pages": 6,
+            "action": "repartition",
+            "child_build_pages": [
+              2,
+              2,
+              2
+            ]
+          },
+          {
+            "depth": 1,
+            "build_pages": 5,
+            "probe_pages": 5,
+            "action": "repartition",
+            "child_build_pages": [
+              2,
+              2,
+              2
+            ]
+          },
+          {
+            "depth": 1,
+            "build_pages": 6,
+            "probe_pages": 6,
+            "action": "repartition",
+            "child_build_pages": [
+              2,
+              3,
+              3
+            ]
+          },
+          {
+            "depth": 0,
+            "build_pages": 16,
+            "probe_pages": 16,
+            "action": "repartition",
+            "child_build_pages": [
+              6,
+              5,
+              6
+            ]
+          },
+          {
+            "depth": 1,
+            "build_pages": 6,
+            "probe_pages": 6,
+            "action": "repartition",
+            "child_build_pages": [
+              3,
+              2,
+              2
+            ]
+          },
+          {
+            "depth": 1,
+            "build_pages": 5,
+            "probe_pages": 5,
+            "action": "repartition",
+            "child_build_pages": [
+              2,
+              2,
+              3
+            ]
+          },
+          {
+            "depth": 1,
+            "build_pages": 6,
+            "probe_pages": 6,
+            "action": "repartition",
+            "child_build_pages": [
+              2,
+              2,
+              2
+            ]
+          }
+        ],
+        "children": [
+          {
+            "op": "seqscan R",
+            "reads": 48,
+            "writes": 0,
+            "tuples_out": 912,
+            "comparisons": 0,
+            "children": []
+          },
+          {
+            "op": "seqscan S",
+            "reads": 48,
+            "writes": 0,
+            "tuples_out": 912,
+            "comparisons": 0,
+            "children": []
+          }
+        ]
+      }
+    },
+    {
+      "op": "nested_loop_join",
+      "kind": "uniform",
+      "pages": 48,
+      "B": 16,
+      "M": 48,
+      "N": 48,
+      "formula_reads": 240,
+      "formula_writes": 0,
+      "measured_reads": 240,
+      "measured_writes": 0,
+      "comparisons": 831744,
+      "tuples_out": 912,
+      "peak": 16,
+      "seconds": 1.168,
+      "tree": {
+        "op": "nested_loop_join",
+        "reads": 0,
+        "writes": 0,
+        "tuples_out": 912,
+        "comparisons": 831744,
+        "children": [
+          {
+            "op": "seqscan R",
+            "reads": 48,
+            "writes": 0,
+            "tuples_out": 912,
+            "comparisons": 0,
+            "children": []
+          },
+          {
+            "op": "seqscan S",
+            "reads": 192,
+            "writes": 0,
+            "tuples_out": 3648,
+            "comparisons": 0,
+            "children": []
+          }
+        ]
+      }
+    },
+    {
+      "op": "sort_merge_join",
+      "kind": "uniform",
+      "pages": 48,
+      "B": 16,
+      "M": 48,
+      "N": 48,
+      "formula_reads": 288,
+      "formula_writes": 96,
+      "measured_reads": 288,
+      "measured_writes": 192,
+      "comparisons": 6377,
+      "tuples_out": 912,
+      "peak": 16,
+      "seconds": 1.054,
+      "tree": {
+        "op": "sort_merge_join",
+        "reads": 192,
+        "writes": 192,
+        "tuples_out": 912,
+        "comparisons": 6377,
+        "children": [
+          {
+            "op": "seqscan R",
+            "reads": 48,
+            "writes": 0,
+            "tuples_out": 912,
+            "comparisons": 0,
+            "children": []
+          },
+          {
+            "op": "seqscan S",
+            "reads": 48,
+            "writes": 0,
+            "tuples_out": 912,
+            "comparisons": 0,
+            "children": []
+          }
+        ]
+      }
+    },
+    {
+      "op": "hash_join",
+      "kind": "uniform",
+      "pages": 48,
+      "B": 16,
+      "M": 48,
+      "N": 48,
+      "formula_reads": 192,
+      "formula_writes": 96,
+      "measured_reads": 208,
+      "measured_writes": 112,
+      "comparisons": 912,
+      "tuples_out": 912,
+      "peak": 16,
+      "seconds": 0.501,
+      "tree": {
+        "op": "hash_join",
+        "reads": 112,
+        "writes": 112,
+        "tuples_out": 912,
+        "comparisons": 912,
+        "partitions": {
+          "build_pages": [
+            4,
+            3,
+            4,
+            3,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            3,
+            4,
+            3,
+            4,
+            4
+          ],
+          "probe_pages": [
+            4,
+            3,
+            4,
+            3,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            3,
+            4,
+            3,
+            4,
+            4
+          ]
+        },
+        "overflow": [],
+        "children": [
+          {
+            "op": "seqscan R",
+            "reads": 48,
+            "writes": 0,
+            "tuples_out": 912,
+            "comparisons": 0,
+            "children": []
+          },
+          {
+            "op": "seqscan S",
+            "reads": 48,
+            "writes": 0,
+            "tuples_out": 912,
+            "comparisons": 0,
+            "children": []
+          }
+        ]
+      }
+    },
+    {
+      "op": "nested_loop_join",
+      "kind": "uniform",
+      "pages": 48,
+      "B": 64,
+      "M": 48,
+      "N": 48,
+      "formula_reads": 96,
+      "formula_writes": 0,
+      "measured_reads": 96,
+      "measured_writes": 0,
+      "comparisons": 831744,
+      "tuples_out": 912,
+      "peak": 50,
+      "seconds": 1.148,
+      "tree": {
+        "op": "nested_loop_join",
+        "reads": 0,
+        "writes": 0,
+        "tuples_out": 912,
+        "comparisons": 831744,
+        "children": [
+          {
+            "op": "seqscan R",
+            "reads": 48,
+            "writes": 0,
+            "tuples_out": 912,
+            "comparisons": 0,
+            "children": []
+          },
+          {
+            "op": "seqscan S",
+            "reads": 48,
+            "writes": 0,
+            "tuples_out": 912,
+            "comparisons": 0,
+            "children": []
+          }
+        ]
+      }
+    },
+    {
+      "op": "sort_merge_join",
+      "kind": "uniform",
+      "pages": 48,
+      "B": 64,
+      "M": 48,
+      "N": 48,
+      "formula_reads": 192,
+      "formula_writes": 0,
+      "measured_reads": 192,
+      "measured_writes": 96,
+      "comparisons": 4557,
+      "tuples_out": 912,
+      "peak": 49,
+      "seconds": 0.508,
+      "tree": {
+        "op": "sort_merge_join",
+        "reads": 96,
+        "writes": 96,
+        "tuples_out": 912,
+        "comparisons": 4557,
+        "children": [
+          {
+            "op": "seqscan R",
+            "reads": 48,
+            "writes": 0,
+            "tuples_out": 912,
+            "comparisons": 0,
+            "children": []
+          },
+          {
+            "op": "seqscan S",
+            "reads": 48,
+            "writes": 0,
+            "tuples_out": 912,
+            "comparisons": 0,
+            "children": []
+          }
+        ]
+      }
+    },
+    {
+      "op": "hash_join",
+      "kind": "uniform",
+      "pages": 48,
+      "B": 64,
+      "M": 48,
+      "N": 48,
+      "formula_reads": 192,
+      "formula_writes": 96,
+      "measured_reads": 96,
+      "measured_writes": 0,
+      "comparisons": 912,
+      "tuples_out": 912,
+      "peak": 49,
+      "seconds": 0.015,
+      "tree": {
+        "op": "hash_join",
+        "reads": 0,
+        "writes": 0,
+        "tuples_out": 912,
+        "comparisons": 912,
+        "partitions": {
+          "build_pages": [
+            48
+          ],
+          "probe_pages": [
+            48
+          ],
+          "mode": "memory"
+        },
+        "overflow": [],
+        "children": [
+          {
+            "op": "seqscan R",
+            "reads": 48,
+            "writes": 0,
+            "tuples_out": 912,
+            "comparisons": 0,
+            "children": []
+          },
+          {
+            "op": "seqscan S",
+            "reads": 48,
+            "writes": 0,
+            "tuples_out": 912,
+            "comparisons": 0,
+            "children": []
+          }
+        ]
+      }
+    },
+    {
+      "op": "nested_loop_join",
+      "kind": "uniform",
+      "pages": 48,
+      "B": 256,
+      "M": 48,
+      "N": 48,
+      "formula_reads": 96,
+      "formula_writes": 0,
+      "measured_reads": 96,
+      "measured_writes": 0,
+      "comparisons": 831744,
+      "tuples_out": 912,
+      "peak": 50,
+      "seconds": 1.175,
+      "tree": {
+        "op": "nested_loop_join",
+        "reads": 0,
+        "writes": 0,
+        "tuples_out": 912,
+        "comparisons": 831744,
+        "children": [
+          {
+            "op": "seqscan R",
+            "reads": 48,
+            "writes": 0,
+            "tuples_out": 912,
+            "comparisons": 0,
+            "children": []
+          },
+          {
+            "op": "seqscan S",
+            "reads": 48,
+            "writes": 0,
+            "tuples_out": 912,
+            "comparisons": 0,
+            "children": []
+          }
+        ]
+      }
+    },
+    {
+      "op": "sort_merge_join",
+      "kind": "uniform",
+      "pages": 48,
+      "B": 256,
+      "M": 48,
+      "N": 48,
+      "formula_reads": 192,
+      "formula_writes": 0,
+      "measured_reads": 192,
+      "measured_writes": 96,
+      "comparisons": 4557,
+      "tuples_out": 912,
+      "peak": 49,
+      "seconds": 0.492,
+      "tree": {
+        "op": "sort_merge_join",
+        "reads": 96,
+        "writes": 96,
+        "tuples_out": 912,
+        "comparisons": 4557,
+        "children": [
+          {
+            "op": "seqscan R",
+            "reads": 48,
+            "writes": 0,
+            "tuples_out": 912,
+            "comparisons": 0,
+            "children": []
+          },
+          {
+            "op": "seqscan S",
+            "reads": 48,
+            "writes": 0,
+            "tuples_out": 912,
+            "comparisons": 0,
+            "children": []
+          }
+        ]
+      }
+    },
+    {
+      "op": "hash_join",
+      "kind": "uniform",
+      "pages": 48,
+      "B": 256,
+      "M": 48,
+      "N": 48,
+      "formula_reads": 192,
+      "formula_writes": 96,
+      "measured_reads": 96,
+      "measured_writes": 0,
+      "comparisons": 912,
+      "tuples_out": 912,
+      "peak": 49,
+      "seconds": 0.013,
+      "tree": {
+        "op": "hash_join",
+        "reads": 0,
+        "writes": 0,
+        "tuples_out": 912,
+        "comparisons": 912,
+        "partitions": {
+          "build_pages": [
+            48
+          ],
+          "probe_pages": [
+            48
+          ],
+          "mode": "memory"
+        },
+        "overflow": [],
+        "children": [
+          {
+            "op": "seqscan R",
+            "reads": 48,
+            "writes": 0,
+            "tuples_out": 912,
+            "comparisons": 0,
+            "children": []
+          },
+          {
+            "op": "seqscan S",
+            "reads": 48,
+            "writes": 0,
+            "tuples_out": 912,
+            "comparisons": 0,
+            "children": []
+          }
+        ]
+      }
+    }
+  ],
+  "same_bag": {
+    "8:4": true,
+    "8:16": true,
+    "8:64": true,
+    "8:256": true,
+    "16:4": true,
+    "24:4": true,
+    "24:8": true,
+    "24:16": true,
+    "24:32": true,
+    "24:64": true,
+    "24:128": true,
+    "24:256": true,
+    "36:4": true,
+    "48:4": true,
+    "48:16": true,
+    "48:64": true,
+    "48:256": true
+  },
+  "skew": [
+    {
+      "op": "hash_join",
+      "kind": "uniform",
+      "pages": 20,
+      "B": 4,
+      "M": 20,
+      "N": 20,
+      "formula_reads": 80,
+      "formula_writes": 40,
+      "measured_reads": 130,
+      "measured_writes": 90,
+      "comparisons": 380,
+      "tuples_out": 380,
+      "peak": 4,
+      "seconds": 0.42,
+      "tree": {
+        "op": "hash_join",
+        "reads": 90,
+        "writes": 90,
+        "tuples_out": 380,
+        "comparisons": 380,
+        "partitions": {
+          "build_pages": [
+            7,
+            7,
+            7
+          ],
+          "probe_pages": [
+            7,
+            7,
+            7
+          ]
+        },
+        "overflow": [
+          {
+            "depth": 0,
+            "build_pages": 7,
+            "probe_pages": 7,
+            "action": "repartition",
+            "child_build_pages": [
+              3,
+              3,
+              2
+            ]
+          },
+          {
+            "depth": 0,
+            "build_pages": 7,
+            "probe_pages": 7,
+            "action": "repartition",
+            "child_build_pages": [
+              2,
+              3,
+              3
+            ]
+          },
+          {
+            "depth": 0,
+            "build_pages": 7,
+            "probe_pages": 7,
+            "action": "repartition",
+            "child_build_pages": [
+              3,
+              2,
+              3
+            ]
+          }
+        ],
+        "children": [
+          {
+            "op": "seqscan R",
+            "reads": 20,
+            "writes": 0,
+            "tuples_out": 380,
+            "comparisons": 0,
+            "children": []
+          },
+          {
+            "op": "seqscan S",
+            "reads": 20,
+            "writes": 0,
+            "tuples_out": 380,
+            "comparisons": 0,
+            "children": []
+          }
+        ]
+      },
+      "hot_rows": 0,
+      "rows_per_side": 380,
+      "hot_fraction": 0.0
+    },
+    {
+      "op": "hash_join",
+      "kind": "uniform",
+      "pages": 20,
+      "B": 16,
+      "M": 20,
+      "N": 20,
+      "formula_reads": 80,
+      "formula_writes": 40,
+      "measured_reads": 100,
+      "measured_writes": 60,
+      "comparisons": 380,
+      "tuples_out": 380,
+      "peak": 16,
+      "seconds": 0.138,
+      "tree": {
+        "op": "hash_join",
+        "reads": 60,
+        "writes": 60,
+        "tuples_out": 380,
+        "comparisons": 380,
+        "partitions": {
+          "build_pages": [
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2
+          ],
+          "probe_pages": [
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2
+          ]
+        },
+        "overflow": [],
+        "children": [
+          {
+            "op": "seqscan R",
+            "reads": 20,
+            "writes": 0,
+            "tuples_out": 380,
+            "comparisons": 0,
+            "children": []
+          },
+          {
+            "op": "seqscan S",
+            "reads": 20,
+            "writes": 0,
+            "tuples_out": 380,
+            "comparisons": 0,
+            "children": []
+          }
+        ]
+      },
+      "hot_rows": 0,
+      "rows_per_side": 380,
+      "hot_fraction": 0.0
+    },
+    {
+      "op": "hash_join",
+      "kind": "skew",
+      "pages": 20,
+      "B": 4,
+      "M": 20,
+      "N": 20,
+      "formula_reads": 80,
+      "formula_writes": 40,
+      "measured_reads": 214,
+      "measured_writes": 138,
+      "comparisons": 23942,
+      "tuples_out": 23332,
+      "peak": 4,
+      "seconds": 0.572,
+      "tree": {
+        "op": "hash_join",
+        "reads": 174,
+        "writes": 138,
+        "tuples_out": 23332,
+        "comparisons": 23942,
+        "partitions": {
+          "build_pages": [
+            5,
+            12,
+            4
+          ],
+          "probe_pages": [
+            5,
+            12,
+            4
+          ]
+        },
+        "overflow": [
+          {
+            "depth": 0,
+            "build_pages": 5,
+            "probe_pages": 5,
+            "action": "repartition",
+            "child_build_pages": [
+              2,
+              2,
+              2
+            ]
+          },
+          {
+            "depth": 0,
+            "build_pages": 12,
+            "probe_pages": 12,
+            "action": "repartition",
+            "child_build_pages": [
+              10,
+              2,
+              2
+            ]
+          },
+          {
+            "depth": 1,
+            "build_pages": 10,
+            "probe_pages": 10,
+            "action": "repartition",
+            "child_build_pages": [
+              1,
+              1,
+              9
+            ]
+          },
+          {
+            "depth": 2,
+            "build_pages": 9,
+            "probe_pages": 9,
+            "action": "bnlj",
+            "reason": "repartition did not shrink the build side",
+            "child_build_pages": [
+              1,
+              9,
+              1
+            ]
+          },
+          {
+            "depth": 0,
+            "build_pages": 4,
+            "probe_pages": 4,
+            "action": "repartition",
+            "child_build_pages": [
+              2,
+              2,
+              2
+            ]
+          }
+        ],
+        "children": [
+          {
+            "op": "seqscan R",
+            "reads": 20,
+            "writes": 0,
+            "tuples_out": 380,
+            "comparisons": 0,
+            "children": []
+          },
+          {
+            "op": "seqscan S",
+            "reads": 20,
+            "writes": 0,
+            "tuples_out": 380,
+            "comparisons": 0,
+            "children": []
+          }
+        ]
+      },
+      "hot_rows": 152,
+      "rows_per_side": 380,
+      "hot_fraction": 0.4
+    },
+    {
+      "op": "hash_join",
+      "kind": "skew",
+      "pages": 20,
+      "B": 16,
+      "M": 20,
+      "N": 20,
+      "formula_reads": 80,
+      "formula_writes": 40,
+      "measured_reads": 86,
+      "measured_writes": 46,
+      "comparisons": 23332,
+      "tuples_out": 23332,
+      "peak": 16,
+      "seconds": 0.192,
+      "tree": {
+        "op": "hash_join",
+        "reads": 46,
+        "writes": 46,
+        "tuples_out": 23332,
+        "comparisons": 23332,
+        "partitions": {
+          "build_pages": [
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            9,
+            1,
+            1,
+            1,
+            1
+          ],
+          "probe_pages": [
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            9,
+            1,
+            1,
+            1,
+            1
+          ]
+        },
+        "overflow": [],
+        "children": [
+          {
+            "op": "seqscan R",
+            "reads": 20,
+            "writes": 0,
+            "tuples_out": 380,
+            "comparisons": 0,
+            "children": []
+          },
+          {
+            "op": "seqscan S",
+            "reads": 20,
+            "writes": 0,
+            "tuples_out": 380,
+            "comparisons": 0,
+            "children": []
+          }
+        ]
+      },
+      "hot_rows": 152,
+      "rows_per_side": 380,
+      "hot_fraction": 0.4
+    }
+  ],
+  "sorts": [
+    {
+      "N": 8,
+      "B": 3,
+      "measured_passes": 3,
+      "formula_passes": 3,
+      "integer_passes": 3,
+      "page_reads": 22,
+      "page_writes": 14,
+      "peak": 3,
+      "held_after": 0,
+      "sorted": true,
+      "tuples": 152,
+      "seconds": 0.064,
+      "is_20x": false
+    },
+    {
+      "N": 10,
+      "B": 4,
+      "measured_passes": 2,
+      "formula_passes": 2,
+      "integer_passes": 2,
+      "page_reads": 20,
+      "page_writes": 10,
+      "peak": 4,
+      "held_after": 0,
+      "sorted": true,
+      "tuples": 190,
+      "seconds": 0.052,
+      "is_20x": false
+    },
+    {
+      "N": 16,
+      "B": 4,
+      "measured_passes": 3,
+      "formula_passes": 3,
+      "integer_passes": 3,
+      "page_reads": 44,
+      "page_writes": 28,
+      "peak": 4,
+      "held_after": 0,
+      "sorted": true,
+      "tuples": 304,
+      "seconds": 0.152,
+      "is_20x": false
+    },
+    {
+      "N": 24,
+      "B": 4,
+      "measured_passes": 3,
+      "formula_passes": 3,
+      "integer_passes": 3,
+      "page_reads": 72,
+      "page_writes": 48,
+      "peak": 4,
+      "held_after": 0,
+      "sorted": true,
+      "tuples": 456,
+      "seconds": 0.253,
+      "is_20x": false
+    },
+    {
+      "N": 24,
+      "B": 8,
+      "measured_passes": 2,
+      "formula_passes": 2,
+      "integer_passes": 2,
+      "page_reads": 48,
+      "page_writes": 24,
+      "peak": 8,
+      "held_after": 0,
+      "sorted": true,
+      "tuples": 456,
+      "seconds": 0.125,
+      "is_20x": false
+    },
+    {
+      "N": 48,
+      "B": 16,
+      "measured_passes": 2,
+      "formula_passes": 2,
+      "integer_passes": 2,
+      "page_reads": 96,
+      "page_writes": 48,
+      "peak": 16,
+      "held_after": 0,
+      "sorted": true,
+      "tuples": 912,
+      "seconds": 0.295,
+      "is_20x": false
+    },
+    {
+      "N": 64,
+      "B": 16,
+      "measured_passes": 2,
+      "formula_passes": 2,
+      "integer_passes": 2,
+      "page_reads": 128,
+      "page_writes": 64,
+      "peak": 16,
+      "held_after": 0,
+      "sorted": true,
+      "tuples": 1216,
+      "seconds": 0.377,
+      "is_20x": false
+    },
+    {
+      "N": 80,
+      "B": 4,
+      "measured_passes": 4,
+      "formula_passes": 4,
+      "integer_passes": 4,
+      "page_reads": 312,
+      "page_writes": 232,
+      "peak": 4,
+      "held_after": 0,
+      "sorted": true,
+      "tuples": 1520,
+      "seconds": 1.17,
+      "is_20x": true
+    }
+  ],
+  "crossover_b": [
+    {
+      "B": 4,
+      "order": [
+        {
+          "op": "hash_join",
+          "cost": 280,
+          "reads": 164,
+          "writes": 116
+        },
+        {
+          "op": "nested_loop_join",
+          "cost": 312,
+          "reads": 312,
+          "writes": 0
+        },
+        {
+          "op": "sort_merge_join",
+          "cost": 336,
+          "reads": 192,
+          "writes": 144
+        }
+      ]
+    },
+    {
+      "B": 8,
+      "order": [
+        {
+          "op": "nested_loop_join",
+          "cost": 120,
+          "reads": 120,
+          "writes": 0
+        },
+        {
+          "op": "hash_join",
+          "cost": 160,
+          "reads": 104,
+          "writes": 56
+        },
+        {
+          "op": "sort_merge_join",
+          "cost": 240,
+          "reads": 144,
+          "writes": 96
+        }
+      ]
+    },
+    {
+      "B": 16,
+      "order": [
+        {
+          "op": "nested_loop_join",
+          "cost": 72,
+          "reads": 72,
+          "writes": 0
+        },
+        {
+          "op": "hash_join",
+          "cost": 168,
+          "reads": 108,
+          "writes": 60
+        },
+        {
+          "op": "sort_merge_join",
+          "cost": 240,
+          "reads": 144,
+          "writes": 96
+        }
+      ]
+    },
+    {
+      "B": 32,
+      "order": [
+        {
+          "op": "hash_join",
+          "cost": 48,
+          "reads": 48,
+          "writes": 0
+        },
+        {
+          "op": "nested_loop_join",
+          "cost": 48,
+          "reads": 48,
+          "writes": 0
+        },
+        {
+          "op": "sort_merge_join",
+          "cost": 144,
+          "reads": 96,
+          "writes": 48
+        }
+      ]
+    },
+    {
+      "B": 64,
+      "order": [
+        {
+          "op": "hash_join",
+          "cost": 48,
+          "reads": 48,
+          "writes": 0
+        },
+        {
+          "op": "nested_loop_join",
+          "cost": 48,
+          "reads": 48,
+          "writes": 0
+        },
+        {
+          "op": "sort_merge_join",
+          "cost": 144,
+          "reads": 96,
+          "writes": 48
+        }
+      ]
+    },
+    {
+      "B": 128,
+      "order": [
+        {
+          "op": "hash_join",
+          "cost": 48,
+          "reads": 48,
+          "writes": 0
+        },
+        {
+          "op": "nested_loop_join",
+          "cost": 48,
+          "reads": 48,
+          "writes": 0
+        },
+        {
+          "op": "sort_merge_join",
+          "cost": 144,
+          "reads": 96,
+          "writes": 48
+        }
+      ]
+    },
+    {
+      "B": 256,
+      "order": [
+        {
+          "op": "hash_join",
+          "cost": 48,
+          "reads": 48,
+          "writes": 0
+        },
+        {
+          "op": "nested_loop_join",
+          "cost": 48,
+          "reads": 48,
+          "writes": 0
+        },
+        {
+          "op": "sort_merge_join",
+          "cost": 144,
+          "reads": 96,
+          "writes": 48
+        }
+      ]
+    }
+  ],
+  "crossover_size": [
+    {
+      "pages": 8,
+      "order": [
+        {
+          "op": "nested_loop_join",
+          "cost": 40,
+          "reads": 40,
+          "writes": 0
+        },
+        {
+          "op": "hash_join",
+          "cost": 52,
+          "reads": 34,
+          "writes": 18
+        },
+        {
+          "op": "sort_merge_join",
+          "cost": 80,
+          "reads": 48,
+          "writes": 32
+        }
+      ]
+    },
+    {
+      "pages": 16,
+      "order": [
+        {
+          "op": "nested_loop_join",
+          "cost": 144,
+          "reads": 144,
+          "writes": 0
+        },
+        {
+          "op": "hash_join",
+          "cost": 176,
+          "reads": 104,
+          "writes": 72
+        },
+        {
+          "op": "sort_merge_join",
+          "cost": 208,
+          "reads": 120,
+          "writes": 88
+        }
+      ]
+    },
+    {
+      "pages": 24,
+      "order": [
+        {
+          "op": "hash_join",
+          "cost": 280,
+          "reads": 164,
+          "writes": 116
+        },
+        {
+          "op": "nested_loop_join",
+          "cost": 312,
+          "reads": 312,
+          "writes": 0
+        },
+        {
+          "op": "sort_merge_join",
+          "cost": 336,
+          "reads": 192,
+          "writes": 144
+        }
+      ]
+    },
+    {
+      "pages": 36,
+      "order": [
+        {
+          "op": "sort_merge_join",
+          "cost": 504,
+          "reads": 288,
+          "writes": 216
+        },
+        {
+          "op": "hash_join",
+          "cost": 568,
+          "reads": 320,
+          "writes": 248
+        },
+        {
+          "op": "nested_loop_join",
+          "cost": 684,
+          "reads": 684,
+          "writes": 0
+        }
+      ]
+    },
+    {
+      "pages": 48,
+      "order": [
+        {
+          "op": "hash_join",
+          "cost": 740,
+          "reads": 418,
+          "writes": 322
+        },
+        {
+          "op": "sort_merge_join",
+          "cost": 816,
+          "reads": 456,
+          "writes": 360
+        },
+        {
+          "op": "nested_loop_join",
+          "cost": 1200,
+          "reads": 1200,
+          "writes": 0
+        }
+      ]
+    }
+  ]
+}

@@ -17,3 +17,6 @@ I spent the rest of the day prepping to finish M1 and doing the math by hand whi
 
 # Nov 3rd and 4th
 for these 2 days I was working on M2 however the AI kept messing up alot of the code and I had to spend alot of time fixing it, for example it would not account for spillage of operators and would not move data to the disk, and then in addition it would not move it back to memory when it was needed for sorting or a similar operation.
+
+# Nov 5th
+I think I have most of M2 done, just adjusting my report and design to be more understandable and adding some more details to the code like comments and such.
