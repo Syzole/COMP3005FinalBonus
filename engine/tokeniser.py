@@ -96,10 +96,11 @@ def tokenise(source: str) -> list[Token]:
             continue
 
 
-        #this would be an identifier, a letter then either more letters, digits, or underscores
-        if char.isalpha():
+        # Identifier: letter/underscore, then letters, digits, or underscores.
+        # Underscores matter for M3 aggregate outs (count_star, avg_Emp_salary).
+        if char.isalpha() or char == "_":
             text = char
-            while (p := peek()) is not None and p.isalnum():
+            while (p := peek()) is not None and (p.isalnum() or p == "_"):
                 text += next()
             tokens.append(Token(TokenType.IDENTIFIER, text, start_line, start_column))
             continue

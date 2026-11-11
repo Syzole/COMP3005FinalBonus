@@ -24,3 +24,7 @@ I think I have most of M2 done, just adjusting my report and design to be more u
 # Nov 8th
 
 I took a break and spent the reamining time working on M2 and M3. I hope to finish this well before the due date, so that i have time to clean it up and add more details to the code if needed.
+
+
+# Nov 11th
+I am trying to reuse parts of M3 and M1 for M4, but some stuff isnt working and the ai is so dumb and it wants to restart from scratch
