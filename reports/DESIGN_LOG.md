@@ -20,3 +20,7 @@ for these 2 days I was working on M2 however the AI kept messing up alot of the 
 
 # Nov 5th
 I think I have most of M2 done, just adjusting my report and design to be more understandable and adding some more details to the code like comments and such.
+
+# Nov 8th
+
+I took a break and spent the reamining time working on M2 and M3. I hope to finish this well before the due date, so that i have time to clean it up and add more details to the code if needed.
