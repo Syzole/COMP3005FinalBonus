@@ -58,11 +58,17 @@ def rewrite(plan: dict, disable: set[int] | frozenset[int] | None = None) -> dic
         if 7 not in skip:
             node = _rule7_cleanup(node)
         if node == before: #if the node is the same, then we is done and return it
-            return node
-    raise RuntimeError(
-        f"rewrite did not reach a fixed point after {max_passes} passes "
-        "(likely oscillating rules)"
-    )
+            break
+    else:
+        raise RuntimeError(
+            f"rewrite did not reach a fixed point after {max_passes} passes "
+            "(likely oscillating rules)"
+        )
+    # Cosmetic only, and not fed back into rule 1. Merging selects inside the
+    # loop would split them again and the fixed point would never arrive.
+    if 7 not in skip:
+        node = _rule7_finish(node)
+    return node
 
 
 def _map(n: dict, fn) -> dict:
@@ -422,9 +428,10 @@ def _rule6_push_project(n: dict) -> dict:
 
 
 # --- rule 7: cosmetic cleanup -----------------------------------------------
-# Collapse project→project with the same column list.
-# Keeps explain output readable; does not change semantics.
-# (We deliberately do NOT re-merge adjacent selects — that would undo rule 1.)
+# Inside the fixed-point loop: drop project→project with the same column list.
+# After rules 1–6 settle, _rule7_finish collapses adjacent selects and drops a
+# project whose column set matches its child project (order does not matter).
+# Select collapse stays outside the loop so rule 1 does not split the AND again.
 
 
 def _rule7_cleanup(n: dict) -> dict:
@@ -433,4 +440,36 @@ def _rule7_cleanup(n: dict) -> dict:
         child = n["child"]
         if child.get("op") == "project" and child.get("columns") == n.get("columns"):
             return child  # drop the outer duplicate
+    return n
+
+
+def _collapse_adjacent_selects(n: dict) -> dict:
+    """select[p] over select[q] → select[p AND q], bottom-up so a stack collapses."""
+    n = _map(n, _collapse_adjacent_selects)
+    if n.get("op") != "select":
+        return n
+    child = n.get("child")
+    if not isinstance(child, dict) or child.get("op") != "select":
+        return n
+    merged = _fmt_cond(And(_parse(n["condition"]), _parse(child["condition"])))
+    return {"op": "select", "condition": merged, "child": child["child"]}
+
+
+def _drop_same_column_project(n: dict) -> dict:
+    """Drop a project that keeps exactly the columns its child project produces."""
+    n = _map(n, _drop_same_column_project)
+    if n.get("op") != "project":
+        return n
+    child = n.get("child")
+    if not isinstance(child, dict) or child.get("op") != "project":
+        return n
+    if set(n.get("columns") or []) == set(child.get("columns") or []):
+        return child
+    return n
+
+
+def _rule7_finish(n: dict) -> dict:
+    """One cosmetic pass after rules 1–6 have stopped changing the tree."""
+    n = _collapse_adjacent_selects(n)
+    n = _drop_same_column_project(n)
     return n

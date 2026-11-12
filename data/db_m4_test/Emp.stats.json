@@ -1,5 +1,5 @@
 {
-  "buckets": 20,
+  "buckets": 4,
   "columns": {
     "age": {
       "hist": [

@@ -15,7 +15,10 @@ from opt.rewrite import rewrite
 from opt.physicalize import plan_physical
 from opt.stats import unpack_stats
 from opt.cost import choose_join
+from opt.dp import RelInfo, optimize_joins
 from exec.engine import execute_plan
+from engine.expr import parse_condition
+from engine.tree import And
 
 ROOT = Path(__file__).resolve().parents[2]
 DB = ROOT / "data" / "db_m4_test"
@@ -164,6 +167,104 @@ class TestM4(unittest.TestCase):
         left = leftmost_scan(j)
         self.assertEqual(left.get("op"), "seqscan")
         self.assertEqual(left.get("table"), "Dept")
+
+    def test_dp_section_5_1(self):
+        # M4spec §5.1. Bp stands for B′. Width 81.92 = pages * 4096 / tuples,
+        # so 1000 rows → 20 pages and 2000 rows → 40 pages.
+        # The handout's losing plan writes 550 (one pass over A). ceil(40/30)
+        # is 2, so that plan costs 650 here. 530 still wins; we do not force 550.
+        width = 100 * 4096 / 5000
+
+        def rel(rid, pages, tuples):
+            return RelInfo(rid, rid, None, tuples, pages, width, None)
+
+        relations = [rel("A", 100, 5000), rel("Bp", 10, 500), rel("C", 400, 20000)]
+        edges = [("A", "Bp", "A.x = Bp.x"), ("Bp", "C", "Bp.y = C.y")]
+        stats = {
+            "A": {"n_tuples": 5000, "columns": {"x": {"ndv": 2500}}},
+            "Bp": {
+                "n_tuples": 500,
+                "columns": {"x": {"ndv": 2500}, "y": {"ndv": 5000}},
+            },
+            "C": {"n_tuples": 20000, "columns": {"y": {"ndv": 5000}}},
+        }
+        _best, table = optimize_joins(relations, edges, 32, stats)
+        self.assertNotIn(frozenset({"A", "C"}), table)
+
+        ab = table[frozenset({"A", "Bp"})]
+        bc = table[frozenset({"Bp", "C"})]
+        full = table[frozenset({"A", "Bp", "C"})]
+        self.assertEqual(ab.cost, 110)
+        self.assertEqual(ab.pages, 20)
+        self.assertEqual(bc.cost, 410)
+        self.assertEqual(bc.pages, 40)
+        self.assertEqual(full.cost, 530)
+        self.assertEqual(full.tree["op"], "nested_loop_join")
+
+    def test_dp_cartesian_when_disconnected(self):
+        relations = [
+            RelInfo("R", "R", None, 10, 1, 32.0, None),
+            RelInfo("S", "S", None, 10, 1, 32.0, None),
+        ]
+        cell, table = optimize_joins(relations, [], 32, {})
+        self.assertIn(frozenset({"R", "S"}), table)
+        self.assertEqual(cell.tree["condition"], "1 = 1")
+        self.assertEqual(cell.tree["op"], "nested_loop_join")
+
+    def test_dp_rejects_more_than_six(self):
+        relations = [
+            RelInfo(f"R{i}", f"R{i}", None, 10, 1, 32.0, None) for i in range(7)
+        ]
+        with self.assertRaises(ValueError):
+            optimize_joins(relations, [], 32, {})
+
+    def test_rule7_collapses_adjacent_selects(self):
+        plan = {
+            "op": "select",
+            "condition": "e.age > 30",
+            "child": {
+                "op": "select",
+                "condition": "e.age < 60",
+                "child": {"op": "scan", "table": "Emp"},
+            },
+        }
+        out = rewrite(plan)
+        self.assertEqual(out["op"], "select")
+        self.assertEqual(out["child"]["op"], "scan")
+        self.assertEqual(out["child"]["table"], "Emp")
+        self.assertIsInstance(parse_condition(out["condition"]), And)
+
+    def test_rule7_drops_reordered_project(self):
+        plan = {
+            "op": "project",
+            "columns": ["e.name", "e.age"],
+            "child": {
+                "op": "project",
+                "columns": ["e.age", "e.name"],
+                "child": {"op": "scan", "table": "Emp"},
+            },
+        }
+        out = rewrite(plan)
+        self.assertEqual(out["op"], "project")
+        self.assertEqual(sorted(out["columns"]), ["e.age", "e.name"])
+        self.assertEqual(out["child"]["op"], "scan")
+
+    def test_shell_json_query(self):
+        import io
+        from contextlib import redirect_stdout
+
+        from shell.cli import main
+
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            rc = main(["--db", str(DB), "--frames", "8", "--json", "-c", "SELECT name FROM Emp;"])
+        self.assertEqual(rc, 0)
+        payload = json.loads(buf.getvalue())
+        self.assertIn("schema", payload)
+        self.assertIn("rows", payload)
+        self.assertIn("page_reads", payload["totals"])
+        self.assertIn("page_writes", payload["totals"])
+        self.assertIn("alice", [row[0] for row in payload["rows"]])
 
 
 if __name__ == "__main__":

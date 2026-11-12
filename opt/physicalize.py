@@ -24,7 +24,7 @@ from engine.tree import Attr, Compare
 from opt.cost import choose_join, cost_seqscan, cost_sort
 from opt.selectivity import selectivity, join_cardinality, est_pages
 from opt.stats import unpack_stats, empty_defaults
-from opt.dp import RelInfo, PlanCell, optimize_joins
+from opt.dp import RelInfo, PlanCell, is_attr_equality, optimize_joins
 from opt.rewrite import rewrite
 
 _JOIN_PHYS = frozenset({"nested_loop_join", "hash_join", "sort_merge_join"})
@@ -112,7 +112,14 @@ def _phys(n: dict, stats_map: dict, B: int, catalog) -> tuple[dict, dict]:
             tree = {"op": "seqscan", "table": table}
             rows, pages = st["n_tuples"], st["n_pages"]
             cost = cost_seqscan(pages)
-            annot[id(tree)] = {"est_rows": rows, "est_cost": cost, "label": f"seqscan {table}"}
+            width = float(st.get("width", 32))
+            annot[id(tree)] = {
+                "est_rows": rows,
+                "est_cost": cost,
+                "label": f"seqscan {table}",
+                "est_pages": pages,
+                "width": width,
+            }
             return tree, rows, pages, cost
 
         # --- unary ----------------------------------------------------------
@@ -126,19 +133,33 @@ def _phys(n: dict, stats_map: dict, B: int, catalog) -> tuple[dict, dict]:
             sel = selectivity(node["condition"], stats_map, rows)
             out_rows = max(1, math.ceil(rows * sel)) if rows else 0
             tree = {"op": "filter", "condition": node["condition"], "child": child_p}
+            out_pages = est_pages(out_rows, 32)
+            width = float(annot.get(id(child_p), {}).get("width", 32))
             annot[id(tree)] = {
                 "est_rows": out_rows,
                 "est_cost": 0,
                 "label": f"filter ({node['condition']})",
+                "est_pages": out_pages,
+                "width": width,
             }
-            return tree, out_rows, est_pages(out_rows, 32), cost
+            return tree, out_rows, out_pages, cost
 
         if op == "project":
             child_p, rows, pages, cost = walk(node["child"])
             tree = {"op": "project", "columns": node["columns"], "child": child_p}
-            width = max(8.0, 8.0 * len(node["columns"]))
-            annot[id(tree)] = {"est_rows": rows, "est_cost": 0, "label": "project"}
-            return tree, rows, est_pages(rows, width), cost
+            proj_width = max(8.0, 8.0 * len(node["columns"]))
+            out_pages = est_pages(rows, proj_width)
+            # Join-output width stays the relation width (see opt.dp._result_width).
+            # The slimmed proj_width is only this node's own page estimate.
+            width = float(annot.get(id(child_p), {}).get("width", 32))
+            annot[id(tree)] = {
+                "est_rows": rows,
+                "est_cost": 0,
+                "label": "project",
+                "est_pages": out_pages,
+                "width": width,
+            }
+            return tree, rows, out_pages, cost
 
         # --- joins: Selinger DP over the whole cluster ----------------------
         if op in ("join", "cross"):
@@ -325,7 +346,12 @@ def _physicalize_join_cluster(
             RelInfo(rid, table, alias, rows, pages, st.get("width", 32), st)
         )
         access_plans[rid] = PlanCell(
-            cost=cost, rows=rows, pages=pages, tree=tree, rels=frozenset({rid})
+            cost=cost,
+            rows=rows,
+            pages=pages,
+            tree=tree,
+            rels=frozenset({rid}),
+            width=float(st.get("width", 32)),
         )
 
     cell, _table = optimize_joins(relations, edges, B, stats_map, access_plans=access_plans)
@@ -333,38 +359,51 @@ def _physicalize_join_cluster(
     return cell.tree, cell.rows, cell.pages, cell.cost
 
 
-def _annotate_dp_joins(tree: dict, annot: dict, stats_map: dict, B: int) -> tuple[int, float, float]:
-    """Fill annot for join nodes created by DP; reuse access-path annots."""
+def _annotate_dp_joins(
+    tree: dict, annot: dict, stats_map: dict, B: int
+) -> tuple[int, float, float, float]:
+    """Fill annot for join nodes created by DP; reuse access-path annots.
+
+    Returns (rows, pages, cost, width). Pages of an access path are the
+    ones walk() stored, not a fresh est_pages(rows, 32). Join output pages
+    use the average input width, same as optimize_joins, so est_cost's
+    jcost is computed from the same page counts as the DP cell.
+    """
     if id(tree) in annot and tree.get("op") not in _JOIN_PHYS:
         m = annot[id(tree)]
-        # pages not stored in annot — re-derive width-agnostic estimate
         rows = int(m.get("est_rows") or 0)
-        return rows, float(est_pages(rows, 32)), float(m.get("est_cost") or 0)
+        width = float(m.get("width") or 32.0)
+        if "est_pages" in m:
+            pages = float(m["est_pages"])
+        else:
+            pages = float(est_pages(rows, width))
+        return rows, pages, float(m.get("est_cost") or 0), width
 
     op = tree.get("op")
     if op in _JOIN_PHYS:
-        lr, lp, lc = _annotate_dp_joins(tree["left"], annot, stats_map, B)
-        rr, rp, rc = _annotate_dp_joins(tree["right"], annot, stats_map, B)
+        _lr, lp, _lc, lw = _annotate_dp_joins(tree["left"], annot, stats_map, B)
+        rr, rp, _rc, rw = _annotate_dp_joins(tree["right"], annot, stats_map, B)
         cond = tree.get("condition", "1 = 1")
-        equality = "=" in cond and "!=" not in cond and cond != "1 = 1"
+        equality = is_attr_equality(cond)
         _jop, jcost = choose_join(lp, rp, B, equality=equality)
         if cond == "1 = 1":
-            rows = max(1, lr * rr)
+            rows = max(1, _lr * rr)
         else:
-            rows = join_cardinality(lr, rr, cond, stats_map)
-        pages = est_pages(rows, 32)
-        total = lc + rc + jcost
+            rows = join_cardinality(_lr, rr, cond, stats_map)
+        width = (lw + rw) / 2.0
+        pages = est_pages(rows, width)
         annot[id(tree)] = {
             "est_rows": rows,
             "est_cost": jcost,
             "label": f"{op} ({cond})",
+            "est_pages": pages,
+            "width": width,
         }
-        return rows, pages, total
+        return rows, float(pages), jcost, width
 
     if "child" in tree:
         return _annotate_dp_joins(tree["child"], annot, stats_map, B)
-    rows = 1
-    return rows, 1.0, 0.0
+    return 1, 1.0, 0.0, 32.0
 
 
 def _apply_alias(node: dict, alias: str) -> dict:

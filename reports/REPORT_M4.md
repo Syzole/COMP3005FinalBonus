@@ -88,17 +88,17 @@ Command: `python -m opt dp-table --db data/m4_workload/db --logical data/m4_work
 {d}  cost=1.0  rows=20  op=seqscan
 {e}  cost=6.0  rows=800  op=seqscan
 {p}  cost=1.0  rows=100  op=seqscan
-{a,d}  cost=14.0  rows=30000  op=nested_loop_join
-{a,e}  cost=24.0  rows=1200000  op=nested_loop_join
-{a,p}  cost=14.0  rows=1875  op=nested_loop_join
-{d,e}  cost=14.0  rows=16000  op=nested_loop_join
-{d,p}  cost=4.0  rows=2000  op=nested_loop_join
-{e,p}  cost=14.0  rows=80000  op=nested_loop_join
-{a,d,e}  cost=175.0  rows=24000000  op=nested_loop_join
-{a,d,p}  cost=32.0  rows=37500  op=nested_loop_join
-{a,e,p}  cost=771.0  rows=1500000  op=nested_loop_join
-{d,e,p}  cost=32.0  rows=1600000  op=nested_loop_join
-{a,d,e,p}  cost=15040.0  rows=30000000  op=nested_loop_join
+{a,d}  cost=7.0  rows=30000  op=nested_loop_join
+{a,e}  cost=12.0  rows=1200000  op=nested_loop_join
+{a,p}  cost=7.0  rows=1875  op=nested_loop_join
+{d,e}  cost=7.0  rows=16000  op=nested_loop_join
+{d,p}  cost=2.0  rows=2000  op=nested_loop_join
+{e,p}  cost=7.0  rows=80000  op=nested_loop_join
+{a,d,e}  cost=96.0  rows=24000000  op=nested_loop_join
+{a,d,p}  cost=14.0  rows=37500  op=nested_loop_join
+{a,e,p}  cost=431.0  rows=1500000  op=nested_loop_join
+{d,e,p}  cost=14.0  rows=1600000  op=nested_loop_join
+{a,d,e,p}  cost=8456.0  rows=30000000  op=nested_loop_join
 ```
 
 ## Checklist

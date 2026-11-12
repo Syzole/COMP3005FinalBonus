@@ -101,7 +101,7 @@ def _strip_explain(sql: str, analyze: bool) -> str:
     return s
 
 
-def run_sql(session: Session, sql: str) -> int:
+def run_sql(session: Session, sql: str, json_mode: bool = False) -> int:
     meta = _is_meta(sql)
     try:
         if meta == "set":
@@ -206,15 +206,26 @@ def run_sql(session: Session, sql: str) -> int:
                 phys = plan_physical(logical, session.catalog, B=session.frames)
                 result = execute_plan(session.db, phys, session.frames)
                 schema = result["schema"]
-                print(" | ".join(c[0] for c in schema))
-                print("-" * 40)
-                for row in result["rows"]:
-                    print(" | ".join(str(v) for v in row))
-                print(
-                    f"({len(result['rows'])} rows, "
-                    f"reads={result['totals']['page_reads']}, "
-                    f"writes={result['totals']['page_writes']})"
-                )
+                if json_mode:
+                    print(
+                        json.dumps(
+                            {
+                                "schema": schema,
+                                "rows": result["rows"],
+                                "totals": result["totals"],
+                            }
+                        )
+                    )
+                else:
+                    print(" | ".join(c[0] for c in schema))
+                    print("-" * 40)
+                    for row in result["rows"]:
+                        print(" | ".join(str(v) for v in row))
+                    print(
+                        f"({len(result['rows'])} rows, "
+                        f"reads={result['totals']['page_reads']}, "
+                        f"writes={result['totals']['page_writes']})"
+                    )
                 continue
             print(f"error: unsupported statement {type(stmt).__name__}", file=sys.stderr)
             return 1
@@ -227,7 +238,7 @@ def run_sql(session: Session, sql: str) -> int:
         return 1
 
 
-def repl(session: Session) -> int:
+def repl(session: Session, json_mode: bool = False) -> int:
     print(BANNER)
     print(f"db={session.db}  frames={session.frames}")
     buf: list[str] = []
@@ -246,7 +257,7 @@ def repl(session: Session) -> int:
             continue
         # allow meta without semicolon
         if _is_meta(text) and ";" not in text:
-            run_sql(session, text)
+            run_sql(session, text, json_mode=json_mode)
             buf.clear()
             continue
         # split on semicolons for multi-statement
@@ -257,7 +268,7 @@ def repl(session: Session) -> int:
         for part in complete:
             stmt = part.strip()
             if stmt:
-                run_sql(session, stmt + ";")
+                run_sql(session, stmt + ";", json_mode=json_mode)
         buf = [rest] if rest.strip() else []
     return 0
 
@@ -268,19 +279,24 @@ def main(argv=None) -> int:
     p.add_argument("--frames", type=int, default=32)
     p.add_argument("--command", "-c", help="run one statement and exit")
     p.add_argument("--file", "-f", help="run statements from a file")
+    p.add_argument(
+        "--json",
+        action="store_true",
+        help="print each query result as JSON (schema, rows, totals)",
+    )
     args = p.parse_args(argv)
     session = Session(args.db, frames=args.frames)
     if args.command:
-        return run_sql(session, args.command)
+        return run_sql(session, args.command, json_mode=args.json)
     if args.file:
         text = Path(args.file).read_text(encoding="utf-8-sig")
         rc = 0
         for part in text.split(";"):
             stmt = part.strip()
             if stmt:
-                rc = run_sql(session, stmt + ";") or rc
+                rc = run_sql(session, stmt + ";", json_mode=args.json) or rc
         return rc
-    return repl(session)
+    return repl(session, json_mode=args.json)
 
 
 if __name__ == "__main__":
