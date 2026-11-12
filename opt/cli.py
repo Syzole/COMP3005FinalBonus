@@ -25,11 +25,18 @@ from pathlib import Path
 
 from sql.logical_json import explain_tree
 from opt.rewrite import rewrite
-
+from opt.analyze import analyze_table
+from storage.catalog import Catalog
 
 def main(argv=None) -> int:
     p = argparse.ArgumentParser(prog="opt", description="Module 4 query optimizer")
     sub = p.add_subparsers(dest="cmd", required=True)
+
+    pa = sub.add_parser("analyze", help="scan a table and store stats in the catalog")
+    pa.add_argument("--db", "--catalog", dest="db", required=True)
+    pa.add_argument("--table", required=True)
+    pa.add_argument("--buckets", type=int, default=20)
+    pa.add_argument("--frames", type=int, default=32)
 
     # --- rewrite -----------------------------------------------------------
     # Pure logical transform: no --db / stats needed. Good first smoke test
@@ -59,9 +66,11 @@ def main(argv=None) -> int:
                 print("=== after ===")
             if args.json:
                 print(json.dumps(out, indent=2))
-            else:
-                for line in explain_tree(out):
-                    print(line)
+
+        if args.cmd == "analyze":
+            cat = Catalog(args.db)
+            stats = analyze_table(cat, args.table, buckets=args.buckets, frames=args.frames)
+            print(json.dumps(stats, indent=2))  # or a short ok line
             return 0
 
         return 1

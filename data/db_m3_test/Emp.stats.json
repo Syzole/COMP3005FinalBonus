@@ -1,0 +1,183 @@
+{
+  "buckets": 20,
+  "columns": {
+    "age": {
+      "hist": [
+        {
+          "count": 1,
+          "hi": 25,
+          "lo": 25,
+          "ndv": 1
+        },
+        {
+          "count": 1,
+          "hi": 35,
+          "lo": 35,
+          "ndv": 1
+        },
+        {
+          "count": 1,
+          "hi": 40,
+          "lo": 40,
+          "ndv": 1
+        }
+      ],
+      "max": 40,
+      "min": 25,
+      "ndv": 3
+    },
+    "city": {
+      "hist": [
+        {
+          "count": 1,
+          "hi": "ottawa",
+          "lo": "ottawa",
+          "ndv": 1
+        },
+        {
+          "count": 1,
+          "hi": "ottawa",
+          "lo": "ottawa",
+          "ndv": 1
+        },
+        {
+          "count": 1,
+          "hi": "toronto",
+          "lo": "toronto",
+          "ndv": 1
+        }
+      ],
+      "max": "toronto",
+      "min": "ottawa",
+      "ndv": 2
+    },
+    "did": {
+      "hist": [
+        {
+          "count": 1,
+          "hi": 1,
+          "lo": 1,
+          "ndv": 1
+        },
+        {
+          "count": 1,
+          "hi": 1,
+          "lo": 1,
+          "ndv": 1
+        },
+        {
+          "count": 1,
+          "hi": 2,
+          "lo": 2,
+          "ndv": 1
+        }
+      ],
+      "max": 2,
+      "min": 1,
+      "ndv": 2
+    },
+    "eid": {
+      "hist": [
+        {
+          "count": 1,
+          "hi": 1,
+          "lo": 1,
+          "ndv": 1
+        },
+        {
+          "count": 1,
+          "hi": 2,
+          "lo": 2,
+          "ndv": 1
+        },
+        {
+          "count": 1,
+          "hi": 3,
+          "lo": 3,
+          "ndv": 1
+        }
+      ],
+      "max": 3,
+      "min": 1,
+      "ndv": 3
+    },
+    "mgr": {
+      "hist": [
+        {
+          "count": 1,
+          "hi": 1,
+          "lo": 1,
+          "ndv": 1
+        },
+        {
+          "count": 1,
+          "hi": 1,
+          "lo": 1,
+          "ndv": 1
+        },
+        {
+          "count": 1,
+          "hi": 2,
+          "lo": 2,
+          "ndv": 1
+        }
+      ],
+      "max": 2,
+      "min": 1,
+      "ndv": 2
+    },
+    "name": {
+      "hist": [
+        {
+          "count": 1,
+          "hi": "alice",
+          "lo": "alice",
+          "ndv": 1
+        },
+        {
+          "count": 1,
+          "hi": "bob",
+          "lo": "bob",
+          "ndv": 1
+        },
+        {
+          "count": 1,
+          "hi": "carol",
+          "lo": "carol",
+          "ndv": 1
+        }
+      ],
+      "max": "carol",
+      "min": "alice",
+      "ndv": 3
+    },
+    "salary": {
+      "hist": [
+        {
+          "count": 1,
+          "hi": 40000,
+          "lo": 40000,
+          "ndv": 1
+        },
+        {
+          "count": 1,
+          "hi": 50000,
+          "lo": 50000,
+          "ndv": 1
+        },
+        {
+          "count": 1,
+          "hi": 60000,
+          "lo": 60000,
+          "ndv": 1
+        }
+      ],
+      "max": 60000,
+      "min": 40000,
+      "ndv": 3
+    }
+  },
+  "n_pages": 1,
+  "n_tuples": 3,
+  "width": 34.666666666666664
+}
