@@ -1,0 +1,65 @@
+{
+  "buckets": 4,
+  "columns": {
+    "budget": {
+      "hist": [
+        {
+          "count": 1,
+          "hi": 800,
+          "lo": 800,
+          "ndv": 1
+        },
+        {
+          "count": 1,
+          "hi": 2000,
+          "lo": 2000,
+          "ndv": 1
+        }
+      ],
+      "max": 2000,
+      "min": 800,
+      "ndv": 2
+    },
+    "did": {
+      "hist": [
+        {
+          "count": 1,
+          "hi": 1,
+          "lo": 1,
+          "ndv": 1
+        },
+        {
+          "count": 1,
+          "hi": 2,
+          "lo": 2,
+          "ndv": 1
+        }
+      ],
+      "max": 2,
+      "min": 1,
+      "ndv": 2
+    },
+    "title": {
+      "hist": [
+        {
+          "count": 1,
+          "hi": "eng",
+          "lo": "eng",
+          "ndv": 1
+        },
+        {
+          "count": 1,
+          "hi": "hr",
+          "lo": "hr",
+          "ndv": 1
+        }
+      ],
+      "max": "hr",
+      "min": "eng",
+      "ndv": 2
+    }
+  },
+  "n_pages": 1,
+  "n_tuples": 2,
+  "width": 12.5
+}

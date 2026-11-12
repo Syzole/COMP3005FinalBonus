@@ -80,6 +80,7 @@ def _atomic_sel(node: Compare, stats_map: dict, n_tuples: int) -> float:
     n = max(1, (st or {}).get("n_tuples") or n_tuples or 1)
 
     if op == "=":
+        # hist: count/(n*ndv_bucket); else 1/ndv
         hist = cs.get("hist") or []
         if hist and val is not None:
             for b in hist:
@@ -89,11 +90,10 @@ def _atomic_sel(node: Compare, stats_map: dict, n_tuples: int) -> float:
                     return max(1e-9, b["count"] / (n * bndv))
         return 1.0 / ndv
     if op == "!=":
-        # reuse equality path
         eq = Compare(op="=", left=node.left, right=node.right)
         return 1.0 - _atomic_sel(eq, stats_map, n_tuples)
 
-    # ranges
+    # < / > : hist fractions, else uniform min/max, else 0.33
     hist = cs.get("hist") or []
     vmin, vmax = cs.get("min"), cs.get("max")
     if hist and val is not None:
@@ -115,6 +115,7 @@ def _atomic_sel(node: Compare, stats_map: dict, n_tuples: int) -> float:
 
 
 def _range_sel_hist(hist, n, op, val) -> float:
+    """Whole buckets on one side + linear fraction of the bucket holding val."""
     kept = 0.0
     for b in hist:
         lo, hi, cnt = b["lo"], b["hi"], b["count"]
@@ -185,13 +186,12 @@ def _find_stats(col: str, stats_map: dict):
 
 
 def join_cardinality(n_r: int, n_s: int, cond: str, stats_map: dict) -> int:
-    # parse join predicate
+    """Equality: nR*nS/max(ndv); else sel 0.1."""
     try:
         node = parse_condition(cond.strip())
     except Exception:
         return max(1, math.ceil(n_r * n_s * 0.1))
 
-    # attr = attr uses ndvs
     if (
         isinstance(node, Compare)
         and node.op == "="
@@ -204,11 +204,11 @@ def join_cardinality(n_r: int, n_s: int, cond: str, stats_map: dict) -> int:
         ndv_r = max(1, col_stats(_find_stats(right, stats_map), right).get("ndv") or 1)
         return max(1, math.ceil(n_r * n_s / max(ndv_l, ndv_r)))
 
-    # other join predicates
     return max(1, math.ceil(n_r * n_s * 0.1))
 
 
 def est_pages(rows: int, width: float) -> int:
+    """ceil(rows * width / 4096), at least 1 if any rows."""
     if rows <= 0:
         return 0
     return max(1, math.ceil(rows * max(width, 1.0) / 4096))

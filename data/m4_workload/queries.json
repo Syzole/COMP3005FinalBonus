@@ -1,0 +1,22 @@
+[
+  "SELECT eid, age FROM Emp WHERE age > 40;",
+  "SELECT eid FROM Emp WHERE did = 7;",
+  "SELECT eid FROM Emp WHERE did = 7 AND age > 40;",
+  "SELECT e.eid, d.budget FROM Emp e JOIN Dept d ON e.did = d.did;",
+  "SELECT e.eid FROM Emp e, Dept d WHERE e.did = d.did AND d.budget > 5000;",
+  "SELECT e.eid FROM Emp e JOIN Dept d ON e.did = d.did WHERE e.age > 50;",
+  "SELECT did, COUNT(*) AS n FROM Emp GROUP BY did;",
+  "SELECT did, AVG(salary) AS a FROM Emp GROUP BY did HAVING COUNT(*) > 5;",
+  "SELECT DISTINCT did FROM Emp;",
+  "SELECT e.eid FROM Emp e JOIN Assign a ON e.eid = a.eid;",
+  "SELECT p.pid FROM Proj p JOIN Dept d ON p.did = d.did;",
+  "SELECT e.eid FROM Emp e JOIN Assign a ON e.eid = a.eid JOIN Proj p ON a.pid = p.pid;",
+  "SELECT e.eid FROM Emp e, Dept d, Proj p WHERE e.did = d.did AND d.did = p.did;",
+  "SELECT eid FROM Emp WHERE salary > 50000;",
+  "SELECT eid FROM Emp WHERE region = 3;",
+  "SELECT eid FROM Emp WHERE band = 3;",
+  "SELECT eid FROM Emp WHERE region = 3 AND band = 3;",
+  "SELECT eid FROM Emp WHERE region = 3 AND band = 1;",
+  "SELECT e.eid, d.city FROM Emp e JOIN Dept d ON e.did = d.did WHERE e.region = 2;",
+  "SELECT COUNT(*) FROM Emp;"
+]

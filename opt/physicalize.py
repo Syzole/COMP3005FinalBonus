@@ -4,10 +4,10 @@ Pipeline:
   1. rewrite(logical)     — rules 1–7 push selects / turn cross→join / etc.
   2. load_stats_map(...)  — per-table n_tuples, n_pages, hist from catalog
   3. _phys(...)           — walk the rewritten tree bottom-up:
-       logical op  →  physical op + est_rows / est_cost annotations
+       multi-relation join clusters are replaced by Selinger left-deep DP
+       (order + algorithm); other ops map 1:1 to physical names.
 
 Physical names match M2 exec (seqscan, filter, nested_loop_join, …).
-Join algorithm is picked by opt.cost.choose_join from page sizes + buffer B.
 Cardinality / selectivity come from opt.selectivity (engine condition AST).
 
 Rename is not a physical op: we fold the alias onto seqscan["as"] so M2
@@ -24,8 +24,10 @@ from engine.tree import Attr, Compare
 from opt.cost import choose_join, cost_seqscan, cost_sort
 from opt.selectivity import selectivity, join_cardinality, est_pages
 from opt.stats import unpack_stats, empty_defaults
-from opt.dp import RelInfo, optimize_joins
+from opt.dp import RelInfo, PlanCell, optimize_joins
 from opt.rewrite import rewrite
+
+_JOIN_PHYS = frozenset({"nested_loop_join", "hash_join", "sort_merge_join"})
 
 
 def load_stats_map(catalog) -> dict:
@@ -46,21 +48,42 @@ def load_stats_map(catalog) -> dict:
     return out
 
 
-def plan_physical(logical: dict, catalog, B: int = 32) -> dict:
-    """Rewrite then physicalize; return the physical plan dict only."""
-    rewritten = rewrite(logical)
+def plan_physical(
+    logical: dict,
+    catalog,
+    B: int = 32,
+    *,
+    disable_rules: set[int] | frozenset[int] | None = None,
+    already_rewritten: dict | None = None,
+) -> dict:
+    """Rewrite then physicalize; return the physical plan dict only.
+
+    disable_rules / already_rewritten support REPORT_M4 rule ablation without
+    double-rewriting.
+    """
+    rewritten = (
+        already_rewritten
+        if already_rewritten is not None
+        else rewrite(logical, disable=disable_rules)
+    )
     stats_map = load_stats_map(catalog)
     phys, _meta = _phys(rewritten, stats_map, B, catalog)
     return phys
 
 
-def explain_physical(logical: dict, catalog, B: int = 32) -> tuple[dict, dict, list[str]]:
+def explain_physical(
+    logical: dict,
+    catalog,
+    B: int = 32,
+    *,
+    disable_rules: set[int] | frozenset[int] | None = None,
+) -> tuple[dict, dict, list[str]]:
     """Same as plan_physical, plus a before-rewrite copy and indented explain lines.
 
     Returns (before_rewrite, physical, explain_lines).
     """
     before = copy.deepcopy(logical)
-    rewritten = rewrite(logical)
+    rewritten = rewrite(logical, disable=disable_rules)
     stats_map = load_stats_map(catalog)
     phys, annot = _phys(rewritten, stats_map, B, catalog)
     lines = _fmt_explain(phys, annot)
@@ -84,7 +107,6 @@ def _phys(n: dict, stats_map: dict, B: int, catalog) -> tuple[dict, dict]:
 
         # --- leaves ---------------------------------------------------------
         if op == "scan":
-            # logical scan → physical seqscan; cost = read all pages once
             table = node["table"]
             st = stats_map.get(table) or empty_defaults()
             tree = {"op": "seqscan", "table": table}
@@ -95,78 +117,63 @@ def _phys(n: dict, stats_map: dict, B: int, catalog) -> tuple[dict, dict]:
 
         # --- unary ----------------------------------------------------------
         if op == "rename":
-            # not a physical op: push alias down onto the seqscan
             child_p, rows, pages, cost = walk(node["child"])
             child_p = _apply_alias(child_p, node["to"])
             return child_p, rows, pages, cost
 
         if op == "select":
-            # logical select → filter; shrink row estimate by selectivity
             child_p, rows, pages, cost = walk(node["child"])
             sel = selectivity(node["condition"], stats_map, rows)
             out_rows = max(1, math.ceil(rows * sel)) if rows else 0
             tree = {"op": "filter", "condition": node["condition"], "child": child_p}
             annot[id(tree)] = {
                 "est_rows": out_rows,
-                "est_cost": 0,  # filter itself is CPU-only in this model
+                "est_cost": 0,
                 "label": f"filter ({node['condition']})",
             }
             return tree, out_rows, est_pages(out_rows, 32), cost
 
         if op == "project":
-            # column list only; row count unchanged, page width scales with cols
             child_p, rows, pages, cost = walk(node["child"])
             tree = {"op": "project", "columns": node["columns"], "child": child_p}
             width = max(8.0, 8.0 * len(node["columns"]))
             annot[id(tree)] = {"est_rows": rows, "est_cost": 0, "label": "project"}
             return tree, rows, est_pages(rows, width), cost
 
-        # --- joins ----------------------------------------------------------
-        if op == "join":
-            # pick NLJ / SMJ / hash from page sizes; equality opens SMJ+hash
+        # --- joins: Selinger DP over the whole cluster ----------------------
+        if op in ("join", "cross"):
+            cluster = _extract_join_cluster(node)
+            if cluster is not None and len(cluster["rels"]) >= 2:
+                return _physicalize_join_cluster(cluster, stats_map, B, walk, annot)
+            # degenerate single-edge fallback (should be rare)
             left_p, lr, lp, lc = walk(node["left"])
             right_p, rr, rp, rc = walk(node["right"])
-            # crude equality check: SMJ/hash need =, not !=
-            equality = "=" in node["condition"] and "!=" not in node["condition"]
+            cond = node.get("condition", "1 = 1")
+            equality = op == "join" and "=" in cond and "!=" not in cond
             jop, jcost = choose_join(lp, rp, B, equality=equality)
-            rows = join_cardinality(lr, rr, node["condition"], stats_map)
+            rows = (
+                join_cardinality(lr, rr, cond, stats_map)
+                if op == "join"
+                else max(1, lr * rr)
+            )
             pages = est_pages(rows, 32)
             tree = {
                 "op": jop,
-                "condition": node["condition"],
+                "condition": cond if op == "join" else "1 = 1",
                 "left": left_p,
                 "right": right_p,
             }
             annot[id(tree)] = {
                 "est_rows": rows,
                 "est_cost": jcost,
-                "label": f"{jop} ({node['condition']})",
+                "label": f"{jop} ({tree['condition']})",
             }
-            # total cost = children + this join's I/O
             return tree, rows, pages, lc + rc + jcost
-
-        if op == "cross":
-            # rewrite usually turns these into joins; if one survives, treat as
-            # a join with true predicate (no equality → NLJ only)
-            left_p, lr, lp, lc = walk(node["left"])
-            right_p, rr, rp, rc = walk(node["right"])
-            jop, jcost = choose_join(lp, rp, B, equality=False)
-            rows = max(1, lr * rr)
-            tree = {
-                "op": jop,
-                "condition": "1 = 1",
-                "left": left_p,
-                "right": right_p,
-            }
-            annot[id(tree)] = {"est_rows": rows, "est_cost": jcost, "label": jop}
-            return tree, rows, est_pages(rows, 32), lc + rc + jcost
 
         # --- blocking / order ops -------------------------------------------
         if op == "group_by":
             child_p, rows, pages, cost = walk(node["child"])
-            # hash if the input fits in B-1 frames; else external sort
             mode = "hash" if pages <= max(1, B - 1) else "sort"
-            # M2 accepts [fn, arg] or [fn, arg, out_name]
             aggs = []
             for a in node.get("aggregates") or []:
                 if len(a) >= 3:
@@ -180,7 +187,6 @@ def _phys(n: dict, stats_map: dict, B: int, catalog) -> tuple[dict, dict]:
                 "aggregates": aggs,
                 "child": child_p,
             }
-            # rough group cardinality: 1 if no keys, else ~10% of input
             out_rows = max(1, rows // 10) if node.get("keys") else 1
             scost = cost_sort(pages, B) if mode == "sort" else float(pages)
             annot[id(tree)] = {"est_rows": out_rows, "est_cost": scost, "label": f"group_by/{mode}"}
@@ -216,7 +222,6 @@ def _phys(n: dict, stats_map: dict, B: int, catalog) -> tuple[dict, dict]:
             left_p, lr, lp, lc = walk(node["left"])
             right_p, rr, rp, rc = walk(node["right"])
             tree = {"op": op, "left": left_p, "right": right_p}
-            # union_all keeps duplicates; others approx as max(left, right)
             rows = lr + rr if op == "union_all" else max(lr, rr)
             annot[id(tree)] = {"est_rows": rows, "est_cost": 0, "label": op}
             return tree, rows, est_pages(rows, 32), lc + rc
@@ -224,25 +229,154 @@ def _phys(n: dict, stats_map: dict, B: int, catalog) -> tuple[dict, dict]:
         raise ValueError(f"unknown logical op {op}")
 
     phys, rows, pages, cost = walk(n)
-    # ensure the root always has an annotation entry for explain
     annot[id(phys)] = annot.get(
         id(phys), {"est_rows": rows, "est_cost": cost, "label": phys.get("op")}
     )
     return phys, annot
 
 
-def _apply_alias(node: dict, alias: str) -> dict:
-    """Walk through projects/filters until we hit seqscan, then set as=alias.
+def _relation_id(node: dict, alias: str | None = None) -> tuple[str, str]:
+    """(rel_id, base_table) for an access-path subtree."""
+    op = node["op"]
+    if op == "scan":
+        return (alias or node["table"], node["table"])
+    if op == "rename":
+        return _relation_id(node["child"], alias=node["to"])
+    if "child" in node:
+        return _relation_id(node["child"], alias)
+    raise ValueError(f"access path has no scan: {op}")
 
-    Logical:  rename(to=Emp, child=scan(Employee))
-    Physical: seqscan(table=Employee, as=Emp)
+
+def _edge_from_condition(cond: str) -> tuple[str, str, str] | None:
+    try:
+        ast = parse_condition(cond.strip())
+    except Exception:
+        return None
+    if (
+        isinstance(ast, Compare)
+        and ast.op == "="
+        and isinstance(ast.left, Attr)
+        and isinstance(ast.right, Attr)
+        and ast.left.relation
+        and ast.right.relation
+    ):
+        return (ast.left.relation, ast.right.relation, cond)
+    return None
+
+
+def _extract_join_cluster(node: dict) -> dict | None:
+    """Flatten a join/cross nest into {rels, tables, edges}.
+
+    Intermediate projects that wrap nested joins are peeled (column pruning
+    only); projects/filters on a single base relation stay as access paths.
     """
-    node = dict(node)
+    if node.get("op") not in ("join", "cross"):
+        return None
+    rels: dict[str, dict] = {}
+    tables: dict[str, str] = {}
+    edges: list[tuple[str, str, str]] = []
+
+    def rec(n: dict) -> None:
+        op = n["op"]
+        if op == "project":
+            child = n["child"]
+            if child["op"] in ("join", "cross"):
+                rec(child)
+                return
+        if op in ("join", "cross"):
+            rec(n["left"])
+            rec(n["right"])
+            if op == "join":
+                edge = _edge_from_condition(n["condition"])
+                if edge is not None:
+                    edges.append(edge)
+            return
+        rid, table = _relation_id(n)
+        rels[rid] = n
+        tables[rid] = table
+
+    rec(node)
+    if len(rels) < 2:
+        return None
+    return {"rels": rels, "tables": tables, "edges": edges}
+
+
+def _physicalize_join_cluster(
+    cluster: dict,
+    stats_map: dict,
+    B: int,
+    walk,
+    annot: dict,
+) -> tuple[dict, int, float, float]:
+    """Physicalize access paths, run left-deep DP, annotate join nodes."""
+    rels_logical = cluster["rels"]
+    tables = cluster["tables"]
+    edges = cluster["edges"]
+
+    relations: list[RelInfo] = []
+    access_plans: dict[str, PlanCell] = {}
+
+    for rid, logical_path in rels_logical.items():
+        tree, rows, pages, cost = walk(logical_path)
+        table = tables[rid]
+        st = stats_map.get(table) or empty_defaults()
+        alias = rid if rid != table else None
+        relations.append(
+            RelInfo(rid, table, alias, rows, pages, st.get("width", 32), st)
+        )
+        access_plans[rid] = PlanCell(
+            cost=cost, rows=rows, pages=pages, tree=tree, rels=frozenset({rid})
+        )
+
+    cell, _table = optimize_joins(relations, edges, B, stats_map, access_plans=access_plans)
+    _annotate_dp_joins(cell.tree, annot, stats_map, B)
+    return cell.tree, cell.rows, cell.pages, cell.cost
+
+
+def _annotate_dp_joins(tree: dict, annot: dict, stats_map: dict, B: int) -> tuple[int, float, float]:
+    """Fill annot for join nodes created by DP; reuse access-path annots."""
+    if id(tree) in annot and tree.get("op") not in _JOIN_PHYS:
+        m = annot[id(tree)]
+        # pages not stored in annot — re-derive width-agnostic estimate
+        rows = int(m.get("est_rows") or 0)
+        return rows, float(est_pages(rows, 32)), float(m.get("est_cost") or 0)
+
+    op = tree.get("op")
+    if op in _JOIN_PHYS:
+        lr, lp, lc = _annotate_dp_joins(tree["left"], annot, stats_map, B)
+        rr, rp, rc = _annotate_dp_joins(tree["right"], annot, stats_map, B)
+        cond = tree.get("condition", "1 = 1")
+        equality = "=" in cond and "!=" not in cond and cond != "1 = 1"
+        _jop, jcost = choose_join(lp, rp, B, equality=equality)
+        if cond == "1 = 1":
+            rows = max(1, lr * rr)
+        else:
+            rows = join_cardinality(lr, rr, cond, stats_map)
+        pages = est_pages(rows, 32)
+        total = lc + rc + jcost
+        annot[id(tree)] = {
+            "est_rows": rows,
+            "est_cost": jcost,
+            "label": f"{op} ({cond})",
+        }
+        return rows, pages, total
+
+    if "child" in tree:
+        return _annotate_dp_joins(tree["child"], annot, stats_map, B)
+    rows = 1
+    return rows, 1.0, 0.0
+
+
+def _apply_alias(node: dict, alias: str) -> dict:
+    """Set as=alias on the seqscan under projects/filters.
+
+    Mutates in place so explain annotations keyed by id(node) stay valid.
+    """
     if node.get("op") == "seqscan":
         node["as"] = alias
         return node
     if "child" in node:
-        node["child"] = _apply_alias(node["child"], alias)
+        _apply_alias(node["child"], alias)
     return node
 
 
@@ -269,67 +403,61 @@ def _fmt_explain(node: dict, annot: dict, depth: int = 0) -> list[str]:
 def build_dp_for_joins(logical: dict, catalog, B: int):
     """Pull base relations + equality join edges out of a plan, then run DP.
 
-    Used by the `opt dp-table` CLI. collect() walks the rewritten logical
-    tree and builds:
-      rels  — one RelInfo per scan (using rename alias as the relation id)
-      edges — (left_alias, right_alias, cond_string) for each R.a = S.b join
-
-    Condition sides come from engine parse_condition (Attr.relation), not regex.
+    Used by the `opt dp-table` CLI. Shares cluster extraction with plan_physical
+    so the table matches the join order that `opt plan` actually emits.
     """
     rewritten = rewrite(logical)
     stats_map = load_stats_map(catalog)
-    rels: list[RelInfo] = []
-    edges: list[tuple[str, str, str]] = []
 
-    def collect(n, alias=None):
-        op = n["op"]
-        if op == "scan":
-            st = stats_map.get(n["table"]) or empty_defaults()
-            # alias (from enclosing rename) becomes the DP relation id
-            rid = alias or n["table"]
-            rels.append(
-                RelInfo(
-                    rid, n["table"], alias, st["n_tuples"], st["n_pages"], st.get("width", 32), st
-                )
-            )
-        elif op == "rename":
-            collect(n["child"], alias=n["to"])
-        elif op == "join":
-            collect(n["left"])
-            collect(n["right"])
-            # need R.col = S.col so DP knows which two rels this edge connects
-            try:
-                cond = parse_condition(n["condition"].strip())
-            except Exception:
-                cond = None
-            if (
-                isinstance(cond, Compare)
-                and cond.op == "="
-                and isinstance(cond.left, Attr)
-                and isinstance(cond.right, Attr)
-                and cond.left.relation
-                and cond.right.relation
-            ):
-                edges.append((cond.left.relation, cond.right.relation, n["condition"]))
-        elif op == "cross":
-            # no predicate → no DP edge; still collect both sides as rels
-            collect(n["left"])
-            collect(n["right"])
-        elif "child" in n:
-            collect(n["child"], alias)
+    # Find the topmost join/cross under unary wrappers (project/select/…).
+    node = rewritten
+    while node.get("op") not in ("join", "cross", None):
+        if "child" in node:
+            node = node["child"]
+        elif node.get("op") in ("union", "union_all", "intersect", "except"):
+            # set-op root: no single join cluster
+            return None, {}
         else:
-            if "left" in n:
-                collect(n["left"])
-            if "right" in n:
-                collect(n["right"])
-
-    collect(rewritten)
-    # same table may appear twice under different aliases; key by RelInfo.id
-    uniq = {}
-    for r in rels:
-        uniq[r.id] = r
-    rels = list(uniq.values())
-    if len(rels) < 2:
+            break
+    if not isinstance(node, dict) or node.get("op") not in ("join", "cross"):
         return None, {}
-    cell, table = optimize_joins(rels, edges, B, stats_map)
+
+    cluster = _extract_join_cluster(node)
+    if cluster is None or len(cluster["rels"]) < 2:
+        return None, {}
+
+    relations: list[RelInfo] = []
+    for rid, logical_path in cluster["rels"].items():
+        table = cluster["tables"][rid]
+        st = stats_map.get(table) or empty_defaults()
+        # Estimate access-path cardinality via a lightweight phys walk of filters.
+        rows, pages = _estimate_access_path(logical_path, stats_map)
+        alias = rid if rid != table else None
+        relations.append(
+            RelInfo(rid, table, alias, rows, pages, st.get("width", 32), st)
+        )
+
+    cell, table = optimize_joins(relations, cluster["edges"], B, stats_map)
     return cell, table
+
+
+def _estimate_access_path(node: dict, stats_map: dict) -> tuple[int, float]:
+    """Rows/pages for a local access path without building a physical tree."""
+    op = node["op"]
+    if op == "scan":
+        st = stats_map.get(node["table"]) or empty_defaults()
+        return st["n_tuples"], float(st["n_pages"])
+    if op == "rename":
+        return _estimate_access_path(node["child"], stats_map)
+    if op == "select":
+        rows, pages = _estimate_access_path(node["child"], stats_map)
+        sel = selectivity(node["condition"], stats_map, rows)
+        out = max(1, math.ceil(rows * sel)) if rows else 0
+        return out, float(est_pages(out, 32))
+    if op == "project":
+        rows, _pages = _estimate_access_path(node["child"], stats_map)
+        width = max(8.0, 8.0 * len(node.get("columns") or []))
+        return rows, float(est_pages(rows, width))
+    if "child" in node:
+        return _estimate_access_path(node["child"], stats_map)
+    return 1, 1.0

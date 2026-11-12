@@ -20,36 +20,17 @@
           "hi": 40,
           "lo": 40,
           "ndv": 1
+        },
+        {
+          "count": 1,
+          "hi": 55,
+          "lo": 55,
+          "ndv": 1
         }
       ],
-      "max": 40,
+      "max": 55,
       "min": 25,
-      "ndv": 3
-    },
-    "city": {
-      "hist": [
-        {
-          "count": 1,
-          "hi": "ottawa",
-          "lo": "ottawa",
-          "ndv": 1
-        },
-        {
-          "count": 1,
-          "hi": "ottawa",
-          "lo": "ottawa",
-          "ndv": 1
-        },
-        {
-          "count": 1,
-          "hi": "toronto",
-          "lo": "toronto",
-          "ndv": 1
-        }
-      ],
-      "max": "toronto",
-      "min": "ottawa",
-      "ndv": 2
+      "ndv": 4
     },
     "did": {
       "hist": [
@@ -59,50 +40,6 @@
           "lo": 1,
           "ndv": 1
         },
-        {
-          "count": 1,
-          "hi": 1,
-          "lo": 1,
-          "ndv": 1
-        },
-        {
-          "count": 1,
-          "hi": 2,
-          "lo": 2,
-          "ndv": 1
-        }
-      ],
-      "max": 2,
-      "min": 1,
-      "ndv": 2
-    },
-    "eid": {
-      "hist": [
-        {
-          "count": 1,
-          "hi": 1,
-          "lo": 1,
-          "ndv": 1
-        },
-        {
-          "count": 1,
-          "hi": 2,
-          "lo": 2,
-          "ndv": 1
-        },
-        {
-          "count": 1,
-          "hi": 3,
-          "lo": 3,
-          "ndv": 1
-        }
-      ],
-      "max": 3,
-      "min": 1,
-      "ndv": 3
-    },
-    "mgr": {
-      "hist": [
         {
           "count": 1,
           "hi": 1,
@@ -145,11 +82,17 @@
           "hi": "carol",
           "lo": "carol",
           "ndv": 1
+        },
+        {
+          "count": 1,
+          "hi": "dave",
+          "lo": "dave",
+          "ndv": 1
         }
       ],
-      "max": "carol",
+      "max": "dave",
       "min": "alice",
-      "ndv": 3
+      "ndv": 4
     },
     "salary": {
       "hist": [
@@ -170,14 +113,20 @@
           "hi": 60000,
           "lo": 60000,
           "ndv": 1
+        },
+        {
+          "count": 1,
+          "hi": 70000,
+          "lo": 70000,
+          "ndv": 1
         }
       ],
-      "max": 60000,
+      "max": 70000,
       "min": 40000,
-      "ndv": 3
+      "ndv": 4
     }
   },
   "n_pages": 1,
-  "n_tuples": 3,
-  "width": 34.666666666666664
+  "n_tuples": 4,
+  "width": 18.25
 }

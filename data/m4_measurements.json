@@ -1,0 +1,783 @@
+{
+  "qerror_median_all_nodes": 1.0,
+  "qerror_worst_all_nodes": 152.0,
+  "qerror_median_root": 1.4,
+  "qerror_worst_root": 152.0,
+  "node_qerror_count": 76,
+  "opt_vs_naive_ratios": [
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    0.21212121212121213,
+    0.21212121212121213,
+    0.21212121212121213,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0
+  ],
+  "opt_vs_naive_min": 0.21212121212121213,
+  "opt_vs_naive_max": 1.0,
+  "rule_ablation": [
+    {
+      "disabled_rule": 1,
+      "queries": 10,
+      "total_io": 125,
+      "baseline_io": 133,
+      "delta_io": -8
+    },
+    {
+      "disabled_rule": 2,
+      "queries": 10,
+      "total_io": 125,
+      "baseline_io": 133,
+      "delta_io": -8
+    },
+    {
+      "disabled_rule": 3,
+      "queries": 10,
+      "total_io": 125,
+      "baseline_io": 133,
+      "delta_io": -8
+    },
+    {
+      "disabled_rule": 4,
+      "queries": 11,
+      "total_io": 133,
+      "baseline_io": 133,
+      "delta_io": 0
+    },
+    {
+      "disabled_rule": 5,
+      "queries": 11,
+      "total_io": 133,
+      "baseline_io": 133,
+      "delta_io": 0
+    },
+    {
+      "disabled_rule": 6,
+      "queries": 10,
+      "total_io": 120,
+      "baseline_io": 133,
+      "delta_io": -13
+    },
+    {
+      "disabled_rule": 7,
+      "queries": 11,
+      "total_io": 133,
+      "baseline_io": 133,
+      "delta_io": 0
+    }
+  ],
+  "correlation": {
+    "query": "SELECT eid FROM Emp WHERE region = 3 AND band = 3;",
+    "assumption": "sel(p AND q) = sel(p)*sel(q) independence",
+    "independent_est_rows": 0.5000000000000001,
+    "optimizer_est_rows": 1,
+    "actual_rows": 152,
+    "qerror": 152.0,
+    "plan_io": 6,
+    "region_only_actual": 159,
+    "region_only_io": 6,
+    "note": "region\u2248band correlated ~95%; AND independence underestimates",
+    "join_embedding": {
+      "query": "SELECT e.eid FROM Emp e, Dept d WHERE e.did = d.did AND e.region = 3 AND e.band = 3;",
+      "opt_io": 7,
+      "opt_rows": 152,
+      "opt_comparisons": 3999,
+      "naive_cross_then_filter_io": 9,
+      "naive_rows": 152,
+      "naive_comparisons": 32000,
+      "io_cost_of_bad_vs_better": 2,
+      "comparison_ratio_bad_over_opt": 8.002000500125032
+    }
+  },
+  "details": [
+    {
+      "i": 0,
+      "q": "SELECT eid, age FROM Emp WHERE age > 40;",
+      "actual": 429,
+      "est": 441,
+      "qerror_root": 1.027972027972028,
+      "node_qerrors": [
+        {
+          "op": "project",
+          "est": 441,
+          "actual": 429,
+          "qerror": 1.027972027972028
+        },
+        {
+          "op": "filter",
+          "est": 441,
+          "actual": 429,
+          "qerror": 1.027972027972028
+        },
+        {
+          "op": "seqscan",
+          "est": 800,
+          "actual": 800,
+          "qerror": 1.0
+        }
+      ],
+      "opt_ratio": 1.0,
+      "opt_io": 6
+    },
+    {
+      "i": 1,
+      "q": "SELECT eid FROM Emp WHERE did = 7;",
+      "actual": 28,
+      "est": 20,
+      "qerror_root": 1.4,
+      "node_qerrors": [
+        {
+          "op": "project",
+          "est": 20,
+          "actual": 28,
+          "qerror": 1.4
+        },
+        {
+          "op": "filter",
+          "est": 20,
+          "actual": 28,
+          "qerror": 1.4
+        },
+        {
+          "op": "seqscan",
+          "est": 800,
+          "actual": 800,
+          "qerror": 1.0
+        }
+      ],
+      "opt_ratio": 1.0,
+      "opt_io": 6
+    },
+    {
+      "i": 2,
+      "q": "SELECT eid FROM Emp WHERE did = 7 AND age > 40;",
+      "actual": 20,
+      "est": 12,
+      "qerror_root": 1.6666666666666667,
+      "node_qerrors": [
+        {
+          "op": "project",
+          "est": 12,
+          "actual": 20,
+          "qerror": 1.6666666666666667
+        },
+        {
+          "op": "filter",
+          "est": 12,
+          "actual": 20,
+          "qerror": 1.6666666666666667
+        },
+        {
+          "op": "filter",
+          "est": 441,
+          "actual": 429,
+          "qerror": 1.027972027972028
+        },
+        {
+          "op": "seqscan",
+          "est": 800,
+          "actual": 800,
+          "qerror": 1.0
+        }
+      ],
+      "opt_ratio": 1.0,
+      "opt_io": 6
+    },
+    {
+      "i": 3,
+      "q": "SELECT e.eid, d.budget FROM Emp e JOIN Dept d ON e.did = d.did;",
+      "actual": 800,
+      "est": 800,
+      "qerror_root": 1.0,
+      "node_qerrors": [
+        {
+          "op": "project",
+          "est": 800,
+          "actual": 800,
+          "qerror": 1.0
+        },
+        {
+          "op": "nested_loop_join",
+          "est": 800,
+          "actual": 800,
+          "qerror": 1.0
+        },
+        {
+          "op": "project",
+          "est": 20,
+          "actual": 20,
+          "qerror": 1.0
+        },
+        {
+          "op": "project",
+          "est": 800,
+          "actual": 800,
+          "qerror": 1.0
+        }
+      ],
+      "opt_ratio": 1.0,
+      "opt_io": 7
+    },
+    {
+      "i": 4,
+      "q": "SELECT e.eid FROM Emp e, Dept d WHERE e.did = d.did AND d.budget > 5000;",
+      "actual": 603,
+      "est": 280,
+      "qerror_root": 2.1535714285714285,
+      "node_qerrors": [
+        {
+          "op": "project",
+          "est": 280,
+          "actual": 603,
+          "qerror": 2.1535714285714285
+        },
+        {
+          "op": "nested_loop_join",
+          "est": 280,
+          "actual": 603,
+          "qerror": 2.1535714285714285
+        },
+        {
+          "op": "project",
+          "est": 7,
+          "actual": 15,
+          "qerror": 2.142857142857143
+        },
+        {
+          "op": "project",
+          "est": 800,
+          "actual": 800,
+          "qerror": 1.0
+        }
+      ],
+      "opt_ratio": 1.0,
+      "opt_io": 7
+    },
+    {
+      "i": 5,
+      "q": "SELECT e.eid FROM Emp e JOIN Dept d ON e.did = d.did WHERE e.age > 50;",
+      "actual": 237,
+      "est": 240,
+      "qerror_root": 1.0126582278481013,
+      "node_qerrors": [
+        {
+          "op": "project",
+          "est": 240,
+          "actual": 237,
+          "qerror": 1.0126582278481013
+        },
+        {
+          "op": "nested_loop_join",
+          "est": 240,
+          "actual": 237,
+          "qerror": 1.0126582278481013
+        },
+        {
+          "op": "project",
+          "est": 20,
+          "actual": 20,
+          "qerror": 1.0
+        },
+        {
+          "op": "project",
+          "est": 240,
+          "actual": 237,
+          "qerror": 1.0126582278481013
+        }
+      ],
+      "opt_ratio": 1.0,
+      "opt_io": 7
+    },
+    {
+      "i": 6,
+      "q": "SELECT did, COUNT(*) AS n FROM Emp GROUP BY did;",
+      "actual": 20,
+      "est": 80,
+      "qerror_root": 4.0,
+      "node_qerrors": [
+        {
+          "op": "project",
+          "est": 80,
+          "actual": 20,
+          "qerror": 4.0
+        },
+        {
+          "op": "group_by",
+          "est": 80,
+          "actual": 20,
+          "qerror": 4.0
+        },
+        {
+          "op": "seqscan",
+          "est": 800,
+          "actual": 800,
+          "qerror": 1.0
+        }
+      ],
+      "opt_ratio": 0.21212121212121213,
+      "opt_io": 32
+    },
+    {
+      "i": 7,
+      "q": "SELECT did, AVG(salary) AS a FROM Emp GROUP BY did HAVING COUNT(*) > 5;",
+      "actual": 20,
+      "est": 27,
+      "qerror_root": 1.35,
+      "node_qerrors": [
+        {
+          "op": "project",
+          "est": 27,
+          "actual": 20,
+          "qerror": 1.35
+        },
+        {
+          "op": "filter",
+          "est": 27,
+          "actual": 20,
+          "qerror": 1.35
+        },
+        {
+          "op": "group_by",
+          "est": 80,
+          "actual": 20,
+          "qerror": 4.0
+        },
+        {
+          "op": "seqscan",
+          "est": 800,
+          "actual": 800,
+          "qerror": 1.0
+        }
+      ],
+      "opt_ratio": 0.21212121212121213,
+      "opt_io": 32
+    },
+    {
+      "i": 8,
+      "q": "SELECT DISTINCT did FROM Emp;",
+      "actual": 20,
+      "est": 800,
+      "qerror_root": 40.0,
+      "node_qerrors": [
+        {
+          "op": "distinct",
+          "est": 800,
+          "actual": 20,
+          "qerror": 40.0
+        },
+        {
+          "op": "project",
+          "est": 800,
+          "actual": 800,
+          "qerror": 1.0
+        },
+        {
+          "op": "seqscan",
+          "est": 800,
+          "actual": 800,
+          "qerror": 1.0
+        }
+      ],
+      "opt_ratio": 0.21212121212121213,
+      "opt_io": 32
+    },
+    {
+      "i": 9,
+      "q": "SELECT e.eid FROM Emp e JOIN Assign a ON e.eid = a.eid;",
+      "actual": 1500,
+      "est": 1500,
+      "qerror_root": 1.0,
+      "node_qerrors": [
+        {
+          "op": "project",
+          "est": 1500,
+          "actual": 1500,
+          "qerror": 1.0
+        },
+        {
+          "op": "nested_loop_join",
+          "est": 1500,
+          "actual": 1500,
+          "qerror": 1.0
+        },
+        {
+          "op": "project",
+          "est": 1500,
+          "actual": 1500,
+          "qerror": 1.0
+        },
+        {
+          "op": "project",
+          "est": 800,
+          "actual": 800,
+          "qerror": 1.0
+        }
+      ],
+      "opt_ratio": 1.0,
+      "opt_io": 12
+    },
+    {
+      "i": 10,
+      "q": "SELECT p.pid FROM Proj p JOIN Dept d ON p.did = d.did;",
+      "actual": 100,
+      "est": 100,
+      "qerror_root": 1.0,
+      "node_qerrors": [
+        {
+          "op": "project",
+          "est": 100,
+          "actual": 100,
+          "qerror": 1.0
+        },
+        {
+          "op": "nested_loop_join",
+          "est": 100,
+          "actual": 100,
+          "qerror": 1.0
+        },
+        {
+          "op": "project",
+          "est": 20,
+          "actual": 20,
+          "qerror": 1.0
+        },
+        {
+          "op": "project",
+          "est": 100,
+          "actual": 100,
+          "qerror": 1.0
+        }
+      ],
+      "opt_ratio": 1.0,
+      "opt_io": 2
+    },
+    {
+      "i": 11,
+      "q": "SELECT e.eid FROM Emp e JOIN Assign a ON e.eid = a.eid JOIN Proj p ON a.pid = p.pid;",
+      "actual": 1500,
+      "est": 1875,
+      "qerror_root": 1.25,
+      "node_qerrors": [
+        {
+          "op": "project",
+          "est": 1875,
+          "actual": 1500,
+          "qerror": 1.25
+        },
+        {
+          "op": "nested_loop_join",
+          "est": 1875,
+          "actual": 1500,
+          "qerror": 1.25
+        },
+        {
+          "op": "nested_loop_join",
+          "est": 1500,
+          "actual": 1500,
+          "qerror": 1.0
+        },
+        {
+          "op": "project",
+          "est": 1500,
+          "actual": 1500,
+          "qerror": 1.0
+        },
+        {
+          "op": "project",
+          "est": 800,
+          "actual": 800,
+          "qerror": 1.0
+        },
+        {
+          "op": "project",
+          "est": 100,
+          "actual": 100,
+          "qerror": 1.0
+        }
+      ],
+      "opt_ratio": 1.0,
+      "opt_io": 13
+    },
+    {
+      "i": 12,
+      "q": "SELECT e.eid FROM Emp e, Dept d, Proj p WHERE e.did = d.did AND d.did = p.did;",
+      "actual": 4000,
+      "est": 4000,
+      "qerror_root": 1.0,
+      "node_qerrors": [
+        {
+          "op": "project",
+          "est": 4000,
+          "actual": 4000,
+          "qerror": 1.0
+        },
+        {
+          "op": "nested_loop_join",
+          "est": 4000,
+          "actual": 4000,
+          "qerror": 1.0
+        },
+        {
+          "op": "nested_loop_join",
+          "est": 100,
+          "actual": 100,
+          "qerror": 1.0
+        },
+        {
+          "op": "project",
+          "est": 100,
+          "actual": 100,
+          "qerror": 1.0
+        },
+        {
+          "op": "project",
+          "est": 20,
+          "actual": 20,
+          "qerror": 1.0
+        },
+        {
+          "op": "project",
+          "est": 800,
+          "actual": 800,
+          "qerror": 1.0
+        }
+      ],
+      "opt_ratio": 1.0,
+      "opt_io": 8
+    },
+    {
+      "i": 13,
+      "q": "SELECT eid FROM Emp WHERE salary > 50000;",
+      "actual": 496,
+      "est": 506,
+      "qerror_root": 1.0201612903225807,
+      "node_qerrors": [
+        {
+          "op": "project",
+          "est": 506,
+          "actual": 496,
+          "qerror": 1.0201612903225807
+        },
+        {
+          "op": "filter",
+          "est": 506,
+          "actual": 496,
+          "qerror": 1.0201612903225807
+        },
+        {
+          "op": "seqscan",
+          "est": 800,
+          "actual": 800,
+          "qerror": 1.0
+        }
+      ],
+      "opt_ratio": 1.0,
+      "opt_io": 6
+    },
+    {
+      "i": 14,
+      "q": "SELECT eid FROM Emp WHERE region = 3;",
+      "actual": 159,
+      "est": 20,
+      "qerror_root": 7.95,
+      "node_qerrors": [
+        {
+          "op": "project",
+          "est": 20,
+          "actual": 159,
+          "qerror": 7.95
+        },
+        {
+          "op": "filter",
+          "est": 20,
+          "actual": 159,
+          "qerror": 7.95
+        },
+        {
+          "op": "seqscan",
+          "est": 800,
+          "actual": 800,
+          "qerror": 1.0
+        }
+      ],
+      "opt_ratio": 1.0,
+      "opt_io": 6
+    },
+    {
+      "i": 15,
+      "q": "SELECT eid FROM Emp WHERE band = 3;",
+      "actual": 159,
+      "est": 20,
+      "qerror_root": 7.95,
+      "node_qerrors": [
+        {
+          "op": "project",
+          "est": 20,
+          "actual": 159,
+          "qerror": 7.95
+        },
+        {
+          "op": "filter",
+          "est": 20,
+          "actual": 159,
+          "qerror": 7.95
+        },
+        {
+          "op": "seqscan",
+          "est": 800,
+          "actual": 800,
+          "qerror": 1.0
+        }
+      ],
+      "opt_ratio": 1.0,
+      "opt_io": 6
+    },
+    {
+      "i": 16,
+      "q": "SELECT eid FROM Emp WHERE region = 3 AND band = 3;",
+      "actual": 152,
+      "est": 1,
+      "qerror_root": 152.0,
+      "node_qerrors": [
+        {
+          "op": "project",
+          "est": 1,
+          "actual": 152,
+          "qerror": 152.0
+        },
+        {
+          "op": "filter",
+          "est": 1,
+          "actual": 152,
+          "qerror": 152.0
+        },
+        {
+          "op": "filter",
+          "est": 20,
+          "actual": 159,
+          "qerror": 7.95
+        },
+        {
+          "op": "seqscan",
+          "est": 800,
+          "actual": 800,
+          "qerror": 1.0
+        }
+      ],
+      "opt_ratio": 1.0,
+      "opt_io": 6
+    },
+    {
+      "i": 17,
+      "q": "SELECT eid FROM Emp WHERE region = 3 AND band = 1;",
+      "actual": 4,
+      "est": 1,
+      "qerror_root": 4.0,
+      "node_qerrors": [
+        {
+          "op": "project",
+          "est": 1,
+          "actual": 4,
+          "qerror": 4.0
+        },
+        {
+          "op": "filter",
+          "est": 1,
+          "actual": 4,
+          "qerror": 4.0
+        },
+        {
+          "op": "filter",
+          "est": 40,
+          "actual": 146,
+          "qerror": 3.65
+        },
+        {
+          "op": "seqscan",
+          "est": 800,
+          "actual": 800,
+          "qerror": 1.0
+        }
+      ],
+      "opt_ratio": 1.0,
+      "opt_io": 6
+    },
+    {
+      "i": 18,
+      "q": "SELECT e.eid, d.city FROM Emp e JOIN Dept d ON e.did = d.did WHERE e.region = 2;",
+      "actual": 162,
+      "est": 20,
+      "qerror_root": 8.1,
+      "node_qerrors": [
+        {
+          "op": "project",
+          "est": 20,
+          "actual": 162,
+          "qerror": 8.1
+        },
+        {
+          "op": "nested_loop_join",
+          "est": 20,
+          "actual": 162,
+          "qerror": 8.1
+        },
+        {
+          "op": "project",
+          "est": 20,
+          "actual": 20,
+          "qerror": 1.0
+        },
+        {
+          "op": "project",
+          "est": 20,
+          "actual": 162,
+          "qerror": 8.1
+        }
+      ],
+      "opt_ratio": 1.0,
+      "opt_io": 7
+    },
+    {
+      "i": 19,
+      "q": "SELECT COUNT(*) FROM Emp;",
+      "actual": 1,
+      "est": 1,
+      "qerror_root": 1.0,
+      "node_qerrors": [
+        {
+          "op": "project",
+          "est": 1,
+          "actual": 1,
+          "qerror": 1.0
+        },
+        {
+          "op": "group_by",
+          "est": 1,
+          "actual": 1,
+          "qerror": 1.0
+        },
+        {
+          "op": "seqscan",
+          "est": 800,
+          "actual": 800,
+          "qerror": 1.0
+        }
+      ],
+      "opt_ratio": 1.0,
+      "opt_io": 6
+    }
+  ]
+}

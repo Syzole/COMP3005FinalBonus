@@ -3,13 +3,13 @@
 Selinger-style dynamic programming for join order:
   - State = a set S of base relations already joined
   - Value = cheapest PlanCell that produces S (cost, rows, pages, physical tree)
-  - Transition = take best(S\{r}) as left, singleton {r} as right (left-deep only)
+  - Transition = take best(S - {r}) as left, singleton {r} as right (left-deep only)
 
 We only consider left-deep trees (bushy plans are out of scope for ≤6 rels
 and keep the search small: O(n·2^n) subsets × O(n) choices of r).
 
 Edges come from physicalize.build_dp_for_joins as (left_id, right_id, cond).
-A subset S is only joined via an edge that connects some a∈S\{r} to r; if
+A subset S is only joined via an edge that connects some a in S-{r} to r; if
 no such edge exists we fall back to a Cartesian NLJ with condition "1 = 1".
 """
 
@@ -52,19 +52,8 @@ class PlanCell:
 
 
 def extract_join_graph(logical: dict) -> tuple[list[RelInfo], list[tuple[str, str, str]], dict]:
-    """Stub: real extraction lives in physicalize.build_dp_for_joins.
-
-    Kept so callers expecting (relations, edges, leftover) have a hook;
-    currently returns empty rels/edges and the plan unchanged.
-    """
-    rels: dict[str, RelInfo] = {}
-    edges: list[tuple[str, str, str]] = []
-
-    def add_scan(n, alias=None):
-        # filled by caller with stats
-        pass
-
-    return list(rels.values()), edges, logical
+    """Deprecated hook — use physicalize._extract_join_cluster / build_dp_for_joins."""
+    return [], [], logical
 
 
 def optimize_joins(
@@ -72,13 +61,19 @@ def optimize_joins(
     edges: list[tuple[str, str, str]],
     B: int,
     stats_map: dict,
+    access_plans: dict[str, PlanCell] | None = None,
 ) -> tuple[PlanCell, dict]:
     """Fill the DP table and return (best_full_plan, entire_table).
 
     best[S] = cheapest PlanCell whose leaves are exactly the ids in S.
     After filling sizes 1..n, best[all_ids] is the optimal left-deep plan.
+
+    access_plans: optional pre-physicalized access paths (scan + local
+    filters/projects) keyed by relation id. When present, those seed size-1
+    instead of bare seqscans — used by opt plan so pushdown is preserved.
     """
     by_id = {r.id: r for r in relations}
+    access_plans = access_plans or {}
 
     # undirected edge lookup: frozenset({A,B}) → "A.x = B.y"
     edge_map: dict[frozenset, str] = {}
@@ -87,8 +82,11 @@ def optimize_joins(
 
     best: dict[frozenset, PlanCell] = {}
 
-    # --- size-1: every relation is just a seqscan ---------------------------
+    # --- size-1: access path or bare seqscan --------------------------------
     for r in relations:
+        if r.id in access_plans:
+            best[frozenset({r.id})] = access_plans[r.id]
+            continue
         tree = {"op": "seqscan", "table": r.table}
         if r.alias:
             tree["as"] = r.alias

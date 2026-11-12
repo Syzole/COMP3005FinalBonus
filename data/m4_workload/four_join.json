@@ -1,0 +1,51 @@
+{
+  "op": "project",
+  "columns": [
+    "e.eid"
+  ],
+  "child": {
+    "op": "select",
+    "condition": "(((e.did = d.did) and (p.did = d.did)) and (a.eid = e.eid)) and (a.pid = p.pid)",
+    "child": {
+      "op": "cross",
+      "left": {
+        "op": "cross",
+        "left": {
+          "op": "cross",
+          "left": {
+            "op": "rename",
+            "to": "e",
+            "child": {
+              "op": "scan",
+              "table": "Emp"
+            }
+          },
+          "right": {
+            "op": "rename",
+            "to": "d",
+            "child": {
+              "op": "scan",
+              "table": "Dept"
+            }
+          }
+        },
+        "right": {
+          "op": "rename",
+          "to": "p",
+          "child": {
+            "op": "scan",
+            "table": "Proj"
+          }
+        }
+      },
+      "right": {
+        "op": "rename",
+        "to": "a",
+        "child": {
+          "op": "scan",
+          "table": "Assign"
+        }
+      }
+    }
+  }
+}

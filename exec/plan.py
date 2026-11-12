@@ -77,7 +77,14 @@ def _mode(node, op):
 
 
 def _seqscan(node):
-    return ("seqscan", _string(node, "seqscan", "table"))
+    # Optional "as" → column quals use alias (e.did), not Emp.did.
+    table = _string(node, "seqscan", "table")
+    alias = None
+    if "as" in node:
+        if not isinstance(node["as"], str):
+            raise ExecError("Node 'seqscan': field 'as' must be a string.")
+        alias = node["as"]
+    return ("seqscan", table, alias)
 
 
 def _filter(node):
@@ -108,12 +115,17 @@ def _group(node):
     if not isinstance(aggs, list) or not aggs:
         raise ExecError("Node 'group_by': field 'aggregates' must be a list.")
     for item in aggs:
+        # Accept [fn, arg] or [fn, arg, out_name] (M3/M4 emit the alias form).
         if (
-            not isinstance(item, list) or len(item) != 2
-            or not isinstance(item[0], str) or not isinstance(item[1], str)
+            not isinstance(item, list)
+            or len(item) not in (2, 3)
+            or not isinstance(item[0], str)
+            or not isinstance(item[1], str)
+            or (len(item) == 3 and not isinstance(item[2], str))
         ):
             raise ExecError(
-                "Node 'group_by': field 'aggregates' must be a list of [function, argument] pairs."
+                "Node 'group_by': field 'aggregates' must be a list of "
+                "[function, argument] or [function, argument, out_name] triples."
             )
         if item[0] not in ("count", "sum", "avg", "min", "max"):
             raise ExecError(f"Node 'group_by': unknown aggregate '{item[0]}'.")
@@ -174,7 +186,8 @@ def build_plan(node, ctx):
 def _assemble(spec, ctx):
     kind = spec[0]
     if kind == "seqscan":
-        return SeqScan(ctx, spec[1])
+        # spec = ("seqscan", table, alias|None)
+        return SeqScan(ctx, spec[1], alias=spec[2] if len(spec) > 2 else None)
     if kind == "filter":
         return Filter(ctx, spec[1], _assemble(spec[2], ctx))
     if kind == "project":

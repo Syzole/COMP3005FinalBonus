@@ -111,9 +111,10 @@ class Operator:
 class SeqScan(Operator):
     raw_ok = True
 
-    def __init__(self, ctx, table: str):
+    def __init__(self, ctx, table: str, alias: str | None = None):
         super().__init__(ctx, "seqscan")
         self.table = table
+        self.alias = alias  # optional; qualifies columns as alias.col
         self.disk = None
         self.ids: list[int] = []
         self.page_i = 0
@@ -126,7 +127,9 @@ class SeqScan(Operator):
         info = self.ctx.meta.get(self.table)
         if info is None:
             raise ExecError(f"Node 'seqscan': unknown table '{self.table}'.")
-        self.schema = qualify(self.table, info["schema"])
+        # Prefer plan alias (e) over physical table name (Emp) for column quals.
+        qual = self.alias if self.alias else self.table
+        self.schema = qualify(qual, info["schema"])
         self._path = info["path"]
         self._prepared = True
 
@@ -869,6 +872,7 @@ def _parse_aggs(aggregates, schema, node: str):
     out_schema = []
     for item in aggregates:
         fn, arg = item[0], item[1]
+        alias = item[2] if len(item) >= 3 else None
         if fn in ("sum", "avg", "min", "max"):
             try:
                 idx = resolve(arg, schema)
@@ -878,7 +882,7 @@ def _parse_aggs(aggregates, schema, node: str):
             if fn in ("sum", "avg") and col[1] != "INT":
                 raise ExecError(f"Node '{node}': SUM and AVG require INT.")
             specs.append((fn, idx))
-            name = _agg_name(fn, arg)
+            name = alias or _agg_name(fn, arg)
             if fn == "avg":
                 out_schema.append([name, "VARCHAR", 32])
             elif fn == "sum":
@@ -889,7 +893,7 @@ def _parse_aggs(aggregates, schema, node: str):
                 out_schema.append(renamed)
         elif fn == "count":
             specs.append(("count", None))
-            out_schema.append([_agg_name("count", arg), "INT"])
+            out_schema.append([alias or _agg_name("count", arg), "INT"])
         else:
             raise ExecError(f"Node '{node}': unknown aggregate '{fn}'.")
     return specs, out_schema

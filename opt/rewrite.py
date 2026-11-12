@@ -26,26 +26,37 @@ from engine.expr import parse_condition
 from engine.tree import And, Attr, Compare, Not, Num, Or, Str
 
 
-def rewrite(plan: dict) -> dict:
+def rewrite(plan: dict, disable: set[int] | frozenset[int] | None = None) -> dict:
     """Apply rules 1–7 until a fixed point (plan unchanged for a full pass).
 
     Deep-copies so the caller's plan dict is never mutated in place.
     The pass limit is only a bug guard — if two rules ever oscillate, we
     fail loudly instead of hanging.
+
+    disable: optional set of rule numbers (1..7) to skip — used for REPORT_M4
+    ablation (“which rule mattered”).
     """
+    skip = set(disable or ())
     node = copy.deepcopy(plan)
     # High ceiling: real plans should normalize in a few passes.
     # Hitting this means a rule is undoing another (should not happen).
     max_passes = 10_000
     for pass_no in range(1, max_passes + 1):
         before = copy.deepcopy(node) # make a base copy of the node before we rule them out
-        node = _rule1_split(node)
-        node = _rule2_push_select(node)
-        node = _rule3_cross_to_join(node)
-        node = _rule4_push_rename_union(node)
-        node = _rule5_push_below_groupby(node)
-        node = _rule6_push_project(node)
-        node = _rule7_cleanup(node)
+        if 1 not in skip:
+            node = _rule1_split(node)
+        if 2 not in skip:
+            node = _rule2_push_select(node)
+        if 3 not in skip:
+            node = _rule3_cross_to_join(node)
+        if 4 not in skip:
+            node = _rule4_push_rename_union(node)
+        if 5 not in skip:
+            node = _rule5_push_below_groupby(node)
+        if 6 not in skip:
+            node = _rule6_push_project(node)
+        if 7 not in skip:
+            node = _rule7_cleanup(node)
         if node == before: #if the node is the same, then we is done and return it
             return node
     raise RuntimeError(
