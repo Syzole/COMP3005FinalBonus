@@ -37,7 +37,7 @@ Iterator operators, external sort, BNL/SMJ/HJ, distinct/group (sort+hash), set o
 
 1. Sized sort pass-0 by raw bytes `B * 4096` instead of slotted page packing. Looked fine until the §2.5 example produced 2 passes instead of 3 (22 reads / 14 writes). Fixed by filling B slotted pages per run.
 2. Distinct/Sort parent counters also summed children in `totals`, double-counting I/O in `run --json`. Caught by comparing a seqscan→sort plan’s disk reads to the buffer pool.
-3. Hash-join sketch built an unbounded in-memory table “when it fits” with no page accounting — correct tuples, illegal under B. Replaced with Grace partitioning + BNL overflow fallback.
+3. Hash-join sketch built an unbounded in-memory table “when it fits” with no page accounting — correct tuples, not allowed under B. Replaced with Grace partitioning + BNL overflow fallback.
 4. PowerShell `Set-Content` wrote a UTF-8 BOM; `json.loads` failed on plans. `load_file` now uses `utf-8-sig`.
 
 ---
