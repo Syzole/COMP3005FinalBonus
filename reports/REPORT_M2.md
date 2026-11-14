@@ -152,6 +152,35 @@ I sorted 80 pages at `B = 4`. That is `20 × B`. The table has 1,520 tuples, the
 
 The most frames held at once was 4. `Budget.acquire` is the only way a frame is taken. It stores that maximum in `peak` and refuses a request that would put `held` past `B`. Pass 0 uses `B` pages. A merge holds `B - 1` input frames and one output frame, which is also `B`. After `close`, `held` was 0 and the temporary run directory was gone. `peak` on this run was 4, so the sort used the whole budget and did not go past it.
 
+# Bonus 1, measured again
+
+Bonus 1 joined `R(a INT, b INT)` with `S(b INT, c INT)` on `R.b = S.b` and timed a nested loop over two Python lists. One key matched on each side. At 64,000 tuples that loop did `n × n` = 4,096,000,000 comparisons and took 2,664.9322 seconds. Scaling that time by `(1,000,000 / 64,000)²` gives 650,618 seconds, about 7.5 days, which is what that write-up predicted for a million tuples on each side. The table is that same join on the three operators here. The numbers come from `scripts/measure_bonus1_join.py`, which writes `data/bonus1_join_measurements.json`.
+
+I loaded the same shape into slotted pages. A record is two `INT`s, 8 bytes, plus a 4-byte slot, so a page holds floor(4088 / 12) = 340 tuples. The seconds are `execute_plan` only. Loading is separate. Keys are `0 .. n−1` on both sides, shuffled with seed 1, and every run returned `n` rows. `B` is two frames past the larger relation, so the build side fits in `B − 1` pages and the outer block fits in `B − 2`. Hash join stays in memory, and nested loop reads each side once. Nested loop stops at 8,000 tuples. The vertical axis is logarithmic. Bonus 1 has no million-tuple measurement, so that point is absent from its line.
+
+| n | Pages | B | Bonus 1 | Nested loop | Hash | Sort-merge |
+|--:|------:|--:|--------:|------------:|-----:|-----------:|
+| 1,000 | 3 | 5 | 0.6196 | 1.9777 | 0.0124 | 0.0591 |
+| 2,000 | 6 | 8 | 2.5286 | 8.7415 | 0.0172 | 0.1396 |
+| 4,000 | 12 | 14 | 11.3385 | 31.1392 | 0.0296 | 0.2581 |
+| 8,000 | 24 | 26 | 44.1906 | 98.4095 | 0.0374 | 0.3926 |
+| 16,000 | 48 | 50 | 175.4136 | | 0.0729 | 0.7515 |
+| 32,000 | 95 | 97 | 703.4049 | | 0.1504 | 1.5536 |
+| 64,000 | 189 | 191 | 2664.9322 | | 0.3194 | 3.0606 |
+| 1,000,000 | 2,942 | 2,944 | | | 6.9357 | 58.5874 |
+
+![Wall time on the Bonus 1 join](figures/m2_bonus1_wall.svg)
+
+Bonus 1's time grows by about four when both sides double: 4.08, 4.48, 3.90, 3.97, 4.01, 3.79. This nested loop does the same thing. Its counter was `n × n` on every size I ran, 1,000,000 comparisons at 1,000 tuples and 64,000,000 at 8,000, and the doubling ratios are 4.42, 3.56, 3.16. It is the slower of the two nested loops on every shared size, by 3.19× at 1,000 tuples and 2.23× at 8,000. Each comparison here decodes a slotted page and walks the condition tree. Bonus 1 walked two lists that were already in memory. I treat the comparison counts as the complexity check and the wall times as what a person waits.
+
+Hash join's counter is `n` on every row. These keys are unique and every key matches, so a probe is one lookup. At 64,000 that is 64,000 comparisons in 0.3194 seconds. Bonus 1 took 2,664.9322 seconds on the same size, and 2,664.9322 / 0.3194 = 8,344. From 8,000 tuples to 64,000 the hash time tracks the row count: doubling ratios 1.95, 2.06, 2.12. The million-tuple join did 1,000,000 comparisons, read 5,884 pages, wrote none, and finished in 6.9357 seconds. The step from 64,000 to 1,000,000 is 15.6 times the rows and 21.7 times the seconds. Against the 650,618-second extrapolation, 650,618 / 6.9357 = 93,807.
+
+Sort-merge sits between them. Its counter includes both sorts: 20,304 comparisons at 1,000 tuples, 2,067,707 at 64,000, and 40,252,244 at a million. At 64,000 it took 3.0606 seconds, and 2,664.9322 / 3.0606 = 871. It also writes the finished runs. At 64,000 that is 756 reads and 378 writes, against the in-memory hash join's 378 reads and 0 writes, one scan of each 189-page side. At a million tuples the same split is 11,768 reads and 5,884 writes, against hash join's 5,884 reads and 0 writes, and the join took 58.5874 seconds.
+
+With this `B`, nested loop and in-memory hash join read the same pages. At 8,000 both read 48 pages and wrote 0. The gap, 98.4095 seconds against 0.0374, is the comparisons.
+
+One more point at 64,000 uses `B = 16`, so the 189-page build side does not fit. Grace hash partitioned, still counted 64,000 comparisons, read 768 pages, wrote 390, and finished in 2.6786 seconds. On that size, 2,664.9322 / 2.6786 = 995. The keys were unique, the partitions shrank, and none of them fell back to nested loop.
+
 # Sources
 
 Graefe, *Volcano — An Extensible and Parallel Query Evaluation System*, IEEE TKDE 1994. I built every operator as `open` / `next` / `close`, and I put the blocking work in `open`. That is why pass 0 and every merge except the last finish before the first output tuple, and why a sort-merge join cannot have both sorts open at once. I materialize one sorted run, then the other. The merge holds a frame for each input and one for the current equal-key run, and it uses any frames still free before it spills that run.

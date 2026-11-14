@@ -47,6 +47,6 @@ Shell meta: `SET frames = N`, `LOAD t FROM 'f.csv'`, `ANALYZE t`, `EXPLAIN …`,
 
 ## What I would do differently
 
-1. **Catalog stats in-page from day one** — the 4088-byte record limit forced a sidecar; a dedicated stats heap would have been cleaner.
-2. **One iterator budget object shared with ANALYZE** — ANALYZE currently uses M2 `Sort` via a separate `Context`; unifying pools would simplify oral demos of frame accounting.
-3. **Bushy DP optional** — left-deep is enough for ≤6 relations, but a few star queries want a bushy hash build.
+1. **Catalog stats in-page from day one** — the 4088-byte record limit forced a sidecar; a dedicated stats heap would have been cleaner in the long run and when starting off. 
+2. **One iterator budget object shared with ANALYZE** — ANALYZE currently uses M2 `Sort` via a separate `Context`; unifying pools would simplify oral demos of frame accounting, and be less of a headache for future developers.
+3. **Bushy DP optional** — left-deep is enough for ≤6 relations, but a few star queries instead use a bushy hash build.
