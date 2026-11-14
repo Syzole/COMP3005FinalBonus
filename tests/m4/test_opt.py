@@ -218,6 +218,45 @@ class TestM4(unittest.TestCase):
         with self.assertRaises(ValueError):
             optimize_joins(relations, [], 32, {})
 
+    def test_rule6_push_under_rename(self):
+        plan = {
+            "op": "project",
+            "columns": ["e.name"],
+            "child": {
+                "op": "rename",
+                "to": "e",
+                "child": {"op": "scan", "table": "Emp"},
+            },
+        }
+        out = rewrite(plan)
+        self.assertEqual(out["op"], "project")
+        ren = out["child"]
+        self.assertEqual(ren["op"], "rename")
+        self.assertEqual(ren["to"], "e")
+        inner = ren["child"]
+        self.assertEqual(inner["op"], "project")
+        self.assertEqual(inner["columns"], ["e.name"])
+        self.assertEqual(inner["child"]["op"], "scan")
+
+    def test_rule6_push_under_union(self):
+        plan = {
+            "op": "project",
+            "columns": ["city"],
+            "child": {
+                "op": "union_all",
+                "left": {"op": "scan", "table": "Emp"},
+                "right": {"op": "scan", "table": "Dept"},
+            },
+        }
+        out = rewrite(plan)
+        self.assertEqual(out["op"], "project")
+        u = out["child"]
+        self.assertEqual(u["op"], "union_all")
+        self.assertEqual(u["left"]["op"], "project")
+        self.assertEqual(u["left"]["columns"], ["city"])
+        self.assertEqual(u["right"]["op"], "project")
+        self.assertEqual(u["right"]["columns"], ["city"])
+
     def test_rule7_collapses_adjacent_selects(self):
         plan = {
             "op": "select",

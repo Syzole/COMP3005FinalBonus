@@ -387,10 +387,10 @@ def _rule5_push_below_groupby(n: dict) -> dict:
 
 
 # --- rule 6: push projections under join ------------------------------------
-# project[needed] over join → also project each side down to
-#   (columns ancestors still need) ∪ (columns the join predicate needs).
-# Never drop a column a predicate above still references.
-# Column lists are sorted for stable JSON diffs.
+# project[needed] over join / rename / union → insert a projection under the
+# operator keeping only columns ancestors need, plus columns the operator
+# itself needs (join keys). Never drop a column a predicate above still
+# references. Column lists are sorted for stable JSON diffs.
 
 
 def _rule6_push_project(n: dict) -> dict:
@@ -424,6 +424,32 @@ def _rule6_push_project(n: dict) -> dict:
                 "right": right,
             },
         }
+
+    if child.get("op") == "rename":
+        # Alias-qualified names from M3 stay as-is under the rename (same as rule 4).
+        cols = sorted(needed)
+        inner = child["child"]
+        if cols and inner.get("op") != "project":
+            inner = {"op": "project", "columns": cols, "child": inner}
+        return {
+            "op": "project",
+            "columns": n["columns"],
+            "child": {"op": "rename", "to": child["to"], "child": inner},
+        }
+
+    if child.get("op") in ("union", "union_all"):
+        cols = sorted(needed)
+        left, right = child["left"], child["right"]
+        if cols and left.get("op") != "project":
+            left = {"op": "project", "columns": cols, "child": left}
+        if cols and right.get("op") != "project":
+            right = {"op": "project", "columns": cols, "child": right}
+        return {
+            "op": "project",
+            "columns": n["columns"],
+            "child": {"op": child["op"], "left": left, "right": right},
+        }
+
     return n
 
 

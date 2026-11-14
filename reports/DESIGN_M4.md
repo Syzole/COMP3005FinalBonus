@@ -43,7 +43,7 @@ As in M4spec §2: hist equality, range with bucket fractions, `AND` product (ind
 | 3 | cross+select → join | single equality touching both sides |
 | 4 | Push select under rename / union | rewrite through rename; both union branches |
 | 5 | Push select under group_by | grouping columns only (not aggregates) |
-| 6 | Insert projections under join | keep ancestor + join-key columns |
+| 6 | Insert projections under join, rename, and union / union_all | keep ancestor + join-key columns; alias names stay as-is under rename |
 | 7 | Drop a project with the same column set as the child project, and collapse adjacent selects | cosmetic, and only after rules 1–6 stop changing the tree. Merging selects inside the fixed-point loop would let rule 1 split the AND again. |
 
 Comma join and `JOIN ON` become the same join shape after 1–3.

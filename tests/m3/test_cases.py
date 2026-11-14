@@ -79,16 +79,31 @@ class TestM3Cases(unittest.TestCase):
         )
 
     def test_08_subquery_in_from(self):
+        # M3spec §7 case 8: subquery in FROM with alias, joined to a base table.
         p = compile_sql(
-            "SELECT t.did, t.n FROM "
+            "SELECT t.did, t.n, d.title FROM "
             "(SELECT did, COUNT(*) AS n FROM Emp GROUP BY did) AS t "
-            "WHERE t.n > 3;",
+            "JOIN Dept d ON t.did = d.did;",
             self.cat,
         )
-        self.assertEqual(p["columns"], ["t.did", "t.n"])
-        ren = p["child"]["child"]
-        self.assertEqual(ren["op"], "rename")
-        self.assertEqual(ren["to"], "t")
+        self.assertEqual(p["op"], "project")
+        self.assertEqual(p["columns"], ["t.did", "t.n", "d.title"])
+        j = p["child"]
+        self.assertEqual(j["op"], "join")
+        self.assertIn("t.did", j["condition"])
+        self.assertIn("d.did", j["condition"])
+        left, right = j["left"], j["right"]
+        self.assertEqual(left["op"], "rename")
+        self.assertEqual(left["to"], "t")
+        # Subquery translate is project → group_by → …
+        sub = left["child"]
+        if sub["op"] == "project":
+            sub = sub["child"]
+        self.assertEqual(sub["op"], "group_by")
+        self.assertEqual(right["op"], "rename")
+        self.assertEqual(right["to"], "d")
+        self.assertEqual(right["child"]["op"], "scan")
+        self.assertEqual(right["child"]["table"], "Dept")
 
     def test_09_order_by_not_in_select(self):
         p = compile_sql(

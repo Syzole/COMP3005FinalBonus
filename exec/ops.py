@@ -1923,8 +1923,12 @@ def _partition_run(counter: Operator, run, schema, indexes, salt: int):
 
 
 def _partition_reader(counter, schema, indexes, salt, read_page, external_input: bool, pull=None):
-    parts = counter.budget.B - 1
-    if counter.budget.held + parts + (1 if external_input else 0) > counter.budget.B:
+    # Leave one frame for the input page when we read it ourselves. A parent
+    # (ORDER BY's sort, for example) may already be holding a frame, so the
+    # partition count is whatever is still free, not always B - 1.
+    extra = 1 if external_input else 0
+    parts = counter.budget.B - counter.budget.held - extra
+    if parts < 1:
         raise ExecError("memory budget exceeded during hash partition")
     out_slots = [PageSlot(counter.budget) for _ in range(parts)]
     in_slot = PageSlot(counter.budget) if external_input else None
