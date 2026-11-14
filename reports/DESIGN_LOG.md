@@ -6,11 +6,11 @@ Diary plus the required “AI was wrong” entries (≥2 per module). A log that
 
 ## Week-1 engine refactor / M0
 
-Separated Bonus 1 into `engine/` (tokeniser, parser, tree, eval, JSON). Bags: `project` keeps duplicates; `distinct` is separate. Bonus 1 case 23 gold updated for bag projection.
+Separated Bonus 1 into `engine/` (tokeniser, parser, tree, eval, JSON). Bags: `project` keeps duplicates; `distinct` is separate. Bonus 1 case 23 was updated for bag projection.
 
-### AI wrong / quietly incorrect
+### AI wrong
 
-1. Suggested keeping set-semantics projection “because RA is sets” and emitting an implicit distinct after every project. That would have made SQL `SELECT` silently dedup. Caught by re-reading general §1.3 point 6 and the bag note in M3.
+1. Suggested keeping set-semantics projection “because RA is sets” and emitting an implicit distinct after every project. That would have made SQL `SELECT` dedup. Caught by re-reading general §1.3 point 6 and the bag note in M3.
 2. First JSON round-trip dropped qualified names into bare column strings. Caught by `tests/m1/test_json.py` failing on a `table.column` project list.
 
 ---
@@ -19,7 +19,7 @@ Separated Bonus 1 into `engine/` (tokeniser, parser, tree, eval, JSON). Bags: `p
 
 Implemented disk, slotted pages, heap directory (first-fit), buffer pool (LRU+CLOCK), catalog, loader, `python -m storage`.
 
-### AI wrong / quietly incorrect
+### AI wrong
 
 1. Early CLOCK victim loop advanced the hand only on ref=1 clear and forgot to advance after selecting a victim — §5.3 CLOCK totals drifted (wrong hits/evictions). Caught by the worked example table in `tests/m1/test_buffer.py`.
 2. Suggested reclaiming free space on delete by sliding records (compaction). Spec §3.2 forbids that for this module; after delete of slot 1, free space must stay unchanged. Caught by the layout worked example.
@@ -33,7 +33,7 @@ Brightspace traces were missing; synthetic traces via `scripts/gen_traces.py` fe
 
 Iterator operators, external sort, BNL/SMJ/HJ, distinct/group (sort+hash), set ops, budget, `python -m exec`.
 
-### AI wrong / quietly incorrect
+### AI wrong
 
 1. Sized sort pass-0 by raw bytes `B * 4096` instead of slotted page packing. Looked fine until the §2.5 example produced 2 passes instead of 3 (22 reads / 14 writes). Fixed by filling B slotted pages per run.
 2. Distinct/Sort parent counters also summed children in `totals`, double-counting I/O in `run --json`. Caught by comparing a seqscan→sort plan’s disk reads to the buffer pool.
@@ -46,7 +46,7 @@ Iterator operators, external sort, BNL/SMJ/HJ, distinct/group (sort+hash), set o
 
 Lexer/parser/resolve/translate, `GRAMMAR_SQL.md`, fifteen required cases.
 
-### AI wrong / quietly incorrect
+### AI wrong
 
 1. HAVING condition kept as `COUNT(*) > 5` in the plan; §5.4 requires the output alias (`n > 5`). Caught by matching the worked example tree.
 2. Proposed forbidding aggregates in the condition grammar entirely — then `HAVING COUNT(*)` became a syntax error. Aggregates are legal operands; WHERE rejects them in resolve, not the parser.
@@ -58,7 +58,7 @@ Lexer/parser/resolve/translate, `GRAMMAR_SQL.md`, fifteen required cases.
 
 ANALYZE (sidecar stats), selectivity, rewrite 1–7, cost model, Selinger DP wired into **`opt plan`** (not only `dp-table`), physicalize → M2.
 
-### AI wrong / quietly incorrect
+### AI wrong
 
 1. Storing full histogram JSON in the catalog `stats` blob hit `catalog record too large`. Sidecar `{table}.stats.json` + marker blob fixed it.
 2. First AND-split did not unwrap nested parentheses, so rule 3 saw a mangled residual and comma joins never became joins. Caught by Emp/Dept rewrite smoke test.
