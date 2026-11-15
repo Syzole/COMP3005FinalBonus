@@ -22,3 +22,27 @@ Four modules, each with its own CLI, wired together by a shell:
 `engine/` is the shared library (expressions, relational algebra, plan trees). `python -m shell` runs the full path: SQL, then optimization, then execution, then storage.
 
 Design notes and measurements are in `reports/`.
+
+## Try it
+
+Start the shell. The database directory is created if it does not exist. Statements end with `;`.
+
+```
+python -m shell --db data/demo
+```
+
+```
+sql> CREATE TABLE Emp (name VARCHAR(20), age INT);
+created table Emp
+sql> INSERT INTO Emp VALUES ('alice', 35);
+inserted 1 row into Emp
+sql> INSERT INTO Emp VALUES ('bob', 25);
+inserted 1 row into Emp
+sql> SELECT name, age FROM Emp WHERE age > 30;
+Emp.name | Emp.age
+----------------------------------------
+alice | 35
+(1 rows, reads=1, writes=0)
+```
+
+`.quit` leaves the shell. The same statements can be passed one at a time with `-c`.
